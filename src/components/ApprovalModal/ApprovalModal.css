@@ -1,0 +1,185 @@
+.approval-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  animation: fadeIn 0.15s ease;
+}
+
+.approval-modal {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 560px;
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.approval-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.approval-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.approval-step-badge {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--surface-3);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.approval-plan-summary {
+  padding: 10px 20px;
+  background: var(--surface-2);
+  font-size: 13px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.approval-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.approval-body label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.approval-command,
+.approval-description,
+.approval-expected,
+.approval-risk,
+.approval-rollback {
+  margin-bottom: 14px;
+}
+
+.approval-command pre,
+.approval-rollback pre {
+  margin: 0;
+  padding: 10px 14px;
+  background: var(--terminal-bg);
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+.approval-command code,
+.approval-rollback code {
+  font-family: 'SF Mono', 'Fira Code', Menlo, monospace;
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.approval-body p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.risk-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.risk-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid;
+}
+
+.risk-reason {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.approval-warning {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--danger-dim);
+  color: var(--danger);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.approval-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.approval-btn {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.approval-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-reject {
+  background: var(--surface-3);
+  color: var(--text-secondary);
+}
+
+.btn-reject:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+.btn-approve-all {
+  background: var(--surface-3);
+  color: var(--text-secondary);
+}
+
+.btn-approve-all:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-approve {
+  background: var(--success);
+  color: #fff;
+}
+
+.btn-approve:hover:not(:disabled) {
+  filter: brightness(1.1);
+}

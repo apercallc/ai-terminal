@@ -1,0 +1,115 @@
+/* ===================================================
+   AI Terminal — Global CSS Variables & App Layout
+   =================================================== */
+
+/* ---- Theme: Dark (default) ---- */
+:root,
+[data-theme="dark"] {
+  --bg: #0d1117;
+  --surface-1: #161b22;
+  --surface-2: #1c2129;
+  --surface-3: #272d36;
+  --border: #30363d;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #484f58;
+  --accent: #58a6ff;
+  --accent-hover: #79c0ff;
+  --accent-dim: rgba(88, 166, 255, 0.12);
+  --success: #3fb950;
+  --warning: #d29922;
+  --danger: #f85149;
+  --danger-dim: rgba(248, 81, 73, 0.12);
+  --warning-bg: rgba(210, 153, 34, 0.15);
+  --warning-fg: #d29922;
+  --terminal-bg: #0d1117;
+  --scrollbar-thumb: #30363d;
+}
+
+/* ---- Theme: Light ---- */
+[data-theme="light"] {
+  --bg: #ffffff;
+  --surface-1: #f6f8fa;
+  --surface-2: #eef1f4;
+  --surface-3: #d8dee4;
+  --border: #d0d7de;
+  --text-primary: #1f2328;
+  --text-secondary: #656d76;
+  --text-muted: #8b949e;
+  --accent: #0969da;
+  --accent-hover: #0550ae;
+  --accent-dim: rgba(9, 105, 218, 0.1);
+  --success: #1a7f37;
+  --warning: #9a6700;
+  --danger: #cf222e;
+  --danger-dim: rgba(207, 34, 46, 0.1);
+  --warning-bg: rgba(154, 103, 0, 0.1);
+  --warning-fg: #9a6700;
+  --terminal-bg: #ffffff;
+  --scrollbar-thumb: #c9d1d9;
+}
+
+/* ---- App layout ---- */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+.app-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 38px;
+  padding: 0 16px 0 80px; /* left space for macOS traffic lights */
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border);
+  -webkit-app-region: drag;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.titlebar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.3px;
+}
+
+.titlebar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  -webkit-app-region: no-drag;
+}
+
+.app-terminal {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.app-input {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+}
+
+/* ---- Animations ---- */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}

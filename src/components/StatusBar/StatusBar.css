@@ -1,0 +1,89 @@
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+  min-height: 28px;
+  user-select: none;
+}
+
+.status-left,
+.status-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-state {
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.state-idle {
+  color: var(--text-muted);
+  background: var(--surface-3);
+}
+
+.state-active {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.state-success {
+  color: var(--success);
+  background: var(--success-dim);
+}
+
+.state-error {
+  color: var(--danger);
+  background: var(--danger-dim);
+}
+
+.status-progress {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.status-mode {
+  cursor: default;
+}
+
+.status-provider {
+  cursor: default;
+}
+
+.status-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.status-btn:hover {
+  color: var(--text-primary);
+  background: var(--surface-3);
+}
+
+.status-btn.recording {
+  color: var(--danger);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

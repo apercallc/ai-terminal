@@ -1,0 +1,210 @@
+/* ── Metrics Dashboard Panel ───────────────────────── */
+
+.metrics-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.15s ease;
+}
+
+.metrics-panel {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 580px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+}
+
+.metrics-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.metrics-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.metrics-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.metrics-close-btn:hover {
+  background: var(--surface-3);
+  color: var(--text-primary);
+}
+
+.metrics-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Stats Grid */
+.metrics-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.metrics-stat-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  text-align: center;
+}
+
+.metrics-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.metrics-stat-value.accent {
+  color: var(--accent);
+}
+
+.metrics-stat-value.success {
+  color: var(--success);
+}
+
+.metrics-stat-value.danger {
+  color: var(--danger);
+}
+
+.metrics-stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Success Rate Bar */
+.metrics-section {
+  margin-bottom: 20px;
+}
+
+.metrics-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metrics-bar-container {
+  background: var(--surface-3);
+  border-radius: 6px;
+  height: 24px;
+  overflow: hidden;
+  display: flex;
+  position: relative;
+}
+
+.metrics-bar-fill {
+  height: 100%;
+  transition: width 0.4s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+  min-width: 40px;
+}
+
+.metrics-bar-fill.success {
+  background: var(--success);
+}
+
+.metrics-bar-fill.danger {
+  background: var(--danger);
+}
+
+/* Session History */
+.metrics-session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.metrics-session-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.metrics-session-id {
+  font-family: 'SF Mono', monospace;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.metrics-session-stats {
+  display: flex;
+  gap: 12px;
+  color: var(--text-secondary);
+}
+
+.metrics-session-stats span {
+  white-space: nowrap;
+}
+
+.metrics-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 40px 20px;
+  font-size: 14px;
+}
+
+/* Provider Breakdown */
+.metrics-provider-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.metrics-provider-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.metrics-provider-count {
+  font-weight: 700;
+  color: var(--accent);
+}
