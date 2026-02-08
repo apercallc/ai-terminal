@@ -6,7 +6,7 @@
     <title>AI Terminal — AI for macOS Terminal</title>
     <meta
       name="description"
-      content="AI Terminal for macOS: run AI directly from your terminal. Your models. Your keys. Full control."
+      content="AI Terminal for macOS: turn natural language into real terminal commands — with approvals, local execution, and your choice of OpenAI, Anthropic, or local LLMs."
     />
     <meta name="theme-color" content="#0b1220" />
 
@@ -90,6 +90,14 @@
           <a href="#how" class="hover:text-slate-900">Get Started</a>
           <a href="#pricing" class="hover:text-slate-900">Pricing</a>
           <a href="#faq" class="hover:text-slate-900">FAQ</a>
+          <a
+            href="https://github.com/apercallc/ai-terminal"
+            class="hover:text-slate-900"
+            target="_blank"
+            rel="noreferrer"
+          >
+            GitHub
+          </a>
         </div>
 
         <div class="flex items-center gap-3">
@@ -103,7 +111,7 @@
             href="/downloads/ai-terminal-macos.dmg"
             class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
           >
-            Download for macOS
+            Download for macOS — Start in 60 seconds
           </a>
         </div>
       </nav>
@@ -118,13 +126,15 @@
               AI Terminal for macOS
             </p>
             <h1 class="mt-3 text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
-              Run AI directly from your terminal.
-              <span class="text-slate-600"> Your models. Your keys. Full control.</span>
+              Turn natural language into real terminal commands.
+              <span class="text-slate-600"> Install, debug, and automate — safely, locally, with your own AI.</span>
             </h1>
             <p class="mt-4 max-w-xl text-lg text-slate-600">
-              AI Terminal lets you turn goals into safe, reviewable command plans — and execute them on
-              your machine. Use OpenAI, Anthropic, or a local LLM (like LM Studio) with your own
-              credentials.
+              AI Terminal converts goals into executable shell commands using OpenAI, Anthropic, or a
+              local LLM — with approval before anything runs.
+            </p>
+            <p class="mt-3 max-w-xl text-sm font-medium text-slate-700">
+              Built for indie hackers, founders, and automation-obsessed developers.
             </p>
 
             <div class="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -132,7 +142,7 @@
                 href="/downloads/ai-terminal-macos.dmg"
                 class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800"
               >
-                Download for macOS
+                Download for macOS — Start in 60 seconds
               </a>
               <a
                 href="./setup.md"
@@ -140,6 +150,36 @@
               >
                 View Docs
               </a>
+            </div>
+
+            <div class="mt-3 text-sm text-slate-600">
+              Free. No signup. Uses your own API keys or local models.
+            </div>
+
+            <div class="mt-6">
+              <p class="text-sm font-semibold text-slate-900">What developers use AI Terminal for</p>
+              <ul class="mt-3 space-y-2 text-sm text-slate-700">
+                <li class="flex gap-3">
+                  <span class="mt-1 h-2 w-2 flex-none rounded-full bg-slate-900" aria-hidden="true"></span>
+                  <span>Bootstrap projects in seconds</span>
+                </li>
+                <li class="flex gap-3">
+                  <span class="mt-1 h-2 w-2 flex-none rounded-full bg-slate-900" aria-hidden="true"></span>
+                  <span>Fix build and dependency errors automatically</span>
+                </li>
+                <li class="flex gap-3">
+                  <span class="mt-1 h-2 w-2 flex-none rounded-full bg-slate-900" aria-hidden="true"></span>
+                  <span>Install and configure stacks without copy/paste</span>
+                </li>
+                <li class="flex gap-3">
+                  <span class="mt-1 h-2 w-2 flex-none rounded-full bg-slate-900" aria-hidden="true"></span>
+                  <span>Run local LLM workflows (LM Studio and OpenAI-compatible endpoints)</span>
+                </li>
+                <li class="flex gap-3">
+                  <span class="mt-1 h-2 w-2 flex-none rounded-full bg-slate-900" aria-hidden="true"></span>
+                  <span>Ship faster with safe approvals and repeatable plans</span>
+                </li>
+              </ul>
             </div>
 
             <div class="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-600">
@@ -169,17 +209,20 @@
               <div class="mt-1">
                 <span class="text-slate-100">Goal:</span>
                 <span class="text-slate-300">
-                  Set up Node.js 20 and fix my project build
+                  install node, set up next.js, create a project, start dev server
                 </span>
               </div>
               <div class="mt-3 text-slate-400">Plan</div>
               <ul class="mt-1 list-disc space-y-1 pl-5 text-slate-200">
-                <li>Check existing Node version and PATH</li>
-                <li>Install Node 20 via a safe method</li>
-                <li>Run tests + build, then summarize results</li>
+                <li>Install Node via Homebrew</li>
+                <li>Create a Next.js app</li>
+                <li>Start the dev server</li>
               </ul>
               <div class="mt-3 text-slate-400">Execution</div>
-              <div class="mt-1 text-slate-200">Waiting for approval…</div>
+              <div class="mt-1 text-slate-400">(Review & approve before running)</div>
+              <div class="mt-2 text-slate-200">✓ brew install node</div>
+              <div class="mt-1 text-slate-200">✓ npx create-next-app@latest my-app</div>
+              <div class="mt-1 text-slate-200">✓ cd my-app && npm run dev</div>
             </div>
             <div class="mt-4 grid gap-3 sm:grid-cols-2">
               <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
@@ -189,6 +232,76 @@
               <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
                 <p class="text-xs font-semibold text-slate-700">Bring your provider</p>
                 <p class="mt-1 text-sm text-slate-600">OpenAI, Anthropic, or local LLMs.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- How it works -->
+      <section id="how" class="border-t border-slate-200 bg-white">
+        <div class="mx-auto max-w-6xl px-4 py-14">
+          <div class="max-w-2xl">
+            <h2 class="text-2xl font-semibold tracking-tight">How it works</h2>
+            <p class="mt-2 text-slate-600">Download → add a provider → type a goal → review → run.</p>
+          </div>
+
+          <div class="mt-10 grid gap-4 md:grid-cols-3">
+            <div class="rounded-2xl border border-slate-200 bg-white p-6">
+              <div class="flex items-center gap-3">
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">1</span>
+                <p class="text-sm font-semibold">Download & open</p>
+              </div>
+              <p class="mt-3 text-sm text-slate-600">
+                Install AI Terminal on macOS and launch it like a normal terminal.
+              </p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-6">
+              <div class="flex items-center gap-3">
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">2</span>
+                <p class="text-sm font-semibold">Add your OpenAI / Anthropic / local LLM</p>
+              </div>
+              <p class="mt-3 text-sm text-slate-600">
+                Choose a provider and store credentials locally (Keychain for API keys).
+              </p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-6">
+              <div class="flex items-center gap-3">
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">3</span>
+                <p class="text-sm font-semibold">Type what you want → approve → done</p>
+              </div>
+              <p class="mt-3 text-sm text-slate-600">
+                AI Terminal proposes commands and waits for your approval before executing.
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-10 grid gap-4 lg:grid-cols-3">
+            <div class="rounded-2xl border border-slate-200 bg-white p-6">
+              <p class="text-xs font-semibold text-slate-700">Prompt</p>
+              <div class="mt-2 rounded-xl border border-slate-200 bg-slate-950 p-4 font-mono text-[12px] leading-5 text-slate-100">
+                <div class="text-slate-400">$</div>
+                <div class="mt-1">
+                  <span class="text-slate-100">goal:</span>
+                  <span class="text-slate-300"> set up next.js in a new folder and start it</span>
+                </div>
+              </div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-6">
+              <p class="text-xs font-semibold text-slate-700">Generated commands</p>
+              <div class="mt-2 rounded-xl border border-slate-200 bg-slate-950 p-4 font-mono text-[12px] leading-5 text-slate-100">
+                <div class="text-slate-200">brew install node</div>
+                <div class="mt-1 text-slate-200">npx create-next-app@latest my-app</div>
+                <div class="mt-1 text-slate-200">cd my-app && npm run dev</div>
+              </div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-6">
+              <p class="text-xs font-semibold text-slate-700">Execution</p>
+              <div class="mt-2 rounded-xl border border-slate-200 bg-slate-950 p-4 font-mono text-[12px] leading-5 text-slate-100">
+                <div class="text-slate-400">Approval required</div>
+                <div class="mt-2 text-slate-200">✓ command 1 approved & run</div>
+                <div class="mt-1 text-slate-200">✓ command 2 approved & run</div>
+                <div class="mt-1 text-slate-200">✓ command 3 approved & run</div>
               </div>
             </div>
           </div>
@@ -248,6 +361,45 @@
         </div>
       </section>
 
+      <!-- Why not just ChatGPT? -->
+      <section class="border-t border-slate-200 bg-slate-50">
+        <div class="mx-auto max-w-6xl px-4 py-14">
+          <div class="max-w-2xl">
+            <h2 class="text-2xl font-semibold tracking-tight">Why not just ChatGPT?</h2>
+            <p class="mt-2 text-slate-600">AI Terminal is built to turn intent into executable commands — with safety.</p>
+          </div>
+
+          <div class="mt-10 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-50 text-slate-700">
+                <tr>
+                  <th class="px-5 py-3 font-semibold">ChatGPT</th>
+                  <th class="px-5 py-3 font-semibold">AI Terminal</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200">
+                <tr>
+                  <td class="px-5 py-4 text-slate-600">Copy commands manually</td>
+                  <td class="px-5 py-4 text-slate-600">Generates command plans you can execute</td>
+                </tr>
+                <tr>
+                  <td class="px-5 py-4 text-slate-600">Cloud-first chat UI</td>
+                  <td class="px-5 py-4 text-slate-600">Local app + your choice of provider (cloud or local)</td>
+                </tr>
+                <tr>
+                  <td class="px-5 py-4 text-slate-600">No direct system context</td>
+                  <td class="px-5 py-4 text-slate-600">Works inside your terminal workflow</td>
+                </tr>
+                <tr>
+                  <td class="px-5 py-4 text-slate-600">No execution safety model</td>
+                  <td class="px-5 py-4 text-slate-600">Approve before anything runs (safe mode)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <!-- Integrations -->
       <section id="integrations" class="border-t border-slate-200 bg-slate-50">
         <div class="mx-auto max-w-6xl px-4 py-14">
@@ -274,46 +426,6 @@
             <div class="rounded-2xl border border-slate-200 bg-white p-5">
               <p class="text-sm font-semibold">Local servers</p>
               <p class="mt-2 text-sm text-slate-600">Point to your own endpoint on 127.0.0.1.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- How it works -->
-      <section id="how" class="border-t border-slate-200 bg-white">
-        <div class="mx-auto max-w-6xl px-4 py-14">
-          <div class="max-w-2xl">
-            <h2 class="text-2xl font-semibold tracking-tight">Get started in minutes</h2>
-            <p class="mt-2 text-slate-600">Three simple steps to go from install → AI-powered execution.</p>
-          </div>
-
-          <div class="mt-10 grid gap-4 md:grid-cols-3">
-            <div class="rounded-2xl border border-slate-200 bg-white p-6">
-              <div class="flex items-center gap-3">
-                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">1</span>
-                <p class="text-sm font-semibold">Download & open</p>
-              </div>
-              <p class="mt-3 text-sm text-slate-600">
-                Install AI Terminal on macOS and launch it like a normal terminal.
-              </p>
-            </div>
-            <div class="rounded-2xl border border-slate-200 bg-white p-6">
-              <div class="flex items-center gap-3">
-                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">2</span>
-                <p class="text-sm font-semibold">Add your provider</p>
-              </div>
-              <p class="mt-3 text-sm text-slate-600">
-                Choose OpenAI, Anthropic, or Local LLM and store your key securely in Keychain.
-              </p>
-            </div>
-            <div class="rounded-2xl border border-slate-200 bg-white p-6">
-              <div class="flex items-center gap-3">
-                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">3</span>
-                <p class="text-sm font-semibold">Run a goal</p>
-              </div>
-              <p class="mt-3 text-sm text-slate-600">
-                Describe what you want ("fix my build", "set up ssh", "install node") and approve the plan.
-              </p>
             </div>
           </div>
         </div>
@@ -420,7 +532,7 @@
               href="/downloads/ai-terminal-macos.dmg"
               class="mt-6 inline-flex w-full items-center justify-center rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800"
             >
-              Download for macOS
+              Download for macOS — Start in 60 seconds
             </a>
 
             <p class="mt-3 text-center text-xs text-slate-500">
@@ -516,7 +628,7 @@
                 Start using AI in your terminal today
               </h2>
               <p class="mt-2 text-slate-300">
-                Download AI Terminal for macOS. Add your provider. Stay in control of what runs.
+                Download AI Terminal for macOS. Add your provider. Review, approve, and ship.
               </p>
             </div>
             <div class="flex flex-col gap-3 sm:flex-row lg:justify-end">
@@ -524,7 +636,7 @@
                 href="/downloads/ai-terminal-macos.dmg"
                 class="inline-flex items-center justify-center rounded-lg bg-white px-5 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-100"
               >
-                Download for macOS
+                Download for macOS — Start in 60 seconds
               </a>
               <a
                 href="./setup.md"
@@ -547,13 +659,18 @@
             <div>
               <p class="text-sm font-semibold">AI Terminal</p>
               <p class="mt-2 text-sm text-slate-600">
-                Run AI directly from your terminal. Your models. Your keys. Full control.
+                Turn natural language into real terminal commands — safely, locally, with your own AI.
               </p>
             </div>
             <div>
               <p class="text-sm font-semibold">Product</p>
               <ul class="mt-2 space-y-2 text-sm text-slate-600">
                 <li><a class="hover:text-slate-900" href="#features">Features</a></li>
+                <li>
+                  <a class="hover:text-slate-900" href="https://github.com/apercallc/ai-terminal" target="_blank" rel="noreferrer">
+                    GitHub
+                  </a>
+                </li>
                 <li><a class="hover:text-slate-900" href="#pricing">Pricing</a></li>
                 <li><a class="hover:text-slate-900" href="#faq">FAQ</a></li>
               </ul>
