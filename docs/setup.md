@@ -14,8 +14,8 @@
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/terminal-ill.git
-cd terminal-ill
+git clone https://github.com/<your-org-or-username>/ai-terminal.git
+cd ai-terminal
 ```
 
 ### 2. Install Frontend Dependencies

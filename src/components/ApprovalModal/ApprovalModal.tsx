@@ -23,8 +23,7 @@ export function ApprovalModal({
 }: ApprovalModalProps) {
   const analysis = analyzeCommand(step.command);
   const effectiveRisk =
-    ["high", "critical"].indexOf(analysis.riskLevel) >
-    ["high", "critical"].indexOf(step.riskLevel)
+    ["high", "critical"].indexOf(analysis.riskLevel) > ["high", "critical"].indexOf(step.riskLevel)
       ? analysis.riskLevel
       : step.riskLevel;
 
@@ -102,10 +101,7 @@ export function ApprovalModal({
         </div>
 
         <div className="approval-actions">
-          <button
-            className="approval-btn btn-reject"
-            onClick={onReject}
-          >
+          <button className="approval-btn btn-reject" onClick={onReject}>
             Reject
           </button>
           <button

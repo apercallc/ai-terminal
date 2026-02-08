@@ -106,14 +106,15 @@ export class VoiceInputManager {
   }
 
   private checkSupport(): boolean {
-    return typeof window !== "undefined" &&
-      ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+    return (
+      typeof window !== "undefined" &&
+      ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)
+    );
   }
 
   private initRecognition(): void {
     const SpeechRecognitionCtor: SpeechRecognitionAPI | undefined =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognitionCtor) return;
 

@@ -104,6 +104,7 @@ export default function App() {
   const [showGlobalPalette, setShowGlobalPalette] = useState(false);
 
   const [executionHistory, setExecutionHistory] = useState<ExecutionRecord[]>([]);
+  const executionHistoryIdsRef = useRef<Set<string>>(new Set());
   const [isRecording, setIsRecording] = useState(false);
   const [terminalCwd, setTerminalCwd] = useState("~");
 
@@ -130,8 +131,7 @@ export default function App() {
 
   // Derive convenience values from snapshot
   const agentState = snapshot.state;
-  const pendingStep =
-    agentState === "awaiting_approval" ? snapshot.currentStep : null;
+  const pendingStep = agentState === "awaiting_approval" ? snapshot.currentStep : null;
   const currentStepIndex = snapshot.currentStepIndex;
   const totalSteps = snapshot.plan?.steps.length ?? 0;
   const planSummary = snapshot.plan?.summary ?? "";
@@ -143,9 +143,12 @@ export default function App() {
   useEffect(() => {
     if (snapshot.history.length > 0) {
       setExecutionHistory((prev) => {
-        const existingIds = new Set(prev.map((r) => r.id));
-        const newRecords = snapshot.history.filter((r) => !existingIds.has(r.id));
+        const seen = executionHistoryIdsRef.current;
+        const newRecords = snapshot.history.filter((r) => !seen.has(r.id));
         if (newRecords.length > 0) {
+          for (const r of newRecords) {
+            seen.add(r.id);
+          }
           // Record metrics and fire plugin hooks for new records
           for (const record of newRecords) {
             metrics.recordCommand(record.success);
@@ -192,6 +195,24 @@ export default function App() {
       splitLayout,
     });
   }, [tabs, activeTabId, splitLayout]);
+
+  const handleSplit = useCallback(
+    (direction: SplitDirection) => {
+      setSplitLayout((prev) => {
+        const newPane: SplitPane = {
+          id: `pane-${Date.now()}`,
+          tabId: activeTabId,
+          size: 100 / (prev.panes.length + 1),
+        };
+        const equalSize = 100 / (prev.panes.length + 1);
+        return {
+          direction,
+          panes: [...prev.panes.map((p) => ({ ...p, size: equalSize })), newPane],
+        };
+      });
+    },
+    [activeTabId],
+  );
 
   // Initialize keyboard shortcuts
   useEffect(() => {
@@ -262,12 +283,14 @@ export default function App() {
     return () => {
       shortcutManager.detach();
     };
-  }, [activeTabId, agentState, cancel, approveStep]);
+  }, [activeTabId, agentState, cancel, approveStep, handleSplit]);
 
   // Track recording state
   useEffect(() => {
+    const manager = getRecordingManager();
     const interval = setInterval(() => {
-      setIsRecording(getRecordingManager().isRecording());
+      const next = manager.isRecording();
+      setIsRecording((prev) => (prev === next ? prev : next));
     }, 500);
     return () => clearInterval(interval);
   }, []);
@@ -276,12 +299,19 @@ export default function App() {
   useEffect(() => {
     if (!activePtyId) return;
     let cancelled = false;
+
+    let invokeFn:
+      | (<T>(cmd: string, args?: Record<string, unknown>) => Promise<T>)
+      | null = null;
     const poll = async () => {
       try {
-        const { invoke } = await import("@tauri-apps/api/core");
-        const cwd = await invoke<string>("get_cwd", { sessionId: activePtyId });
+        if (!invokeFn) {
+          const mod = await import("@tauri-apps/api/core");
+          invokeFn = mod.invoke;
+        }
+        const cwd = await invokeFn<string>("get_cwd", { sessionId: activePtyId });
         if (!cancelled && cwd) {
-          setTerminalCwd(cwd);
+          setTerminalCwd((prev) => (prev === cwd ? prev : cwd));
         }
       } catch {
         // ignore — session may have ended
@@ -356,24 +386,6 @@ export default function App() {
     [activeTabId],
   );
 
-  const handleSplit = useCallback((direction: SplitDirection) => {
-    setSplitLayout((prev) => {
-      const newPane: SplitPane = {
-        id: `pane-${Date.now()}`,
-        tabId: activeTabId,
-        size: 100 / (prev.panes.length + 1),
-      };
-      const equalSize = 100 / (prev.panes.length + 1);
-      return {
-        direction,
-        panes: [
-          ...prev.panes.map((p) => ({ ...p, size: equalSize })),
-          newPane,
-        ],
-      };
-    });
-  }, [activeTabId]);
-
   const handleClosePane = useCallback(
     (paneId: string) => {
       setSplitLayout((prev) => {
@@ -399,18 +411,32 @@ export default function App() {
 
   const handleExecuteCommand = useCallback(
     (command: string) => {
-      if (activePtyId) {
-        // Fire plugin hooks
-        pluginManager.fireHook("beforeCommand", { command }).then((ctx) => {
-          const finalCommand = ctx.command || command;
-          import("@tauri-apps/api/core").then(({ invoke }) => {
-            invoke("write_to_pty", { sessionId: activePtyId, data: finalCommand + "\n" }).then(() => {
-              // Fire afterCommand hook (no output yet, that comes from PTY)
-              pluginManager.fireHook("afterCommand", { command: finalCommand, exitCode: 0 });
-            });
-          });
-        });
-      }
+      if (!activePtyId) return;
+
+      void (async () => {
+        let finalCommand = command;
+        try {
+          // Fire plugin hooks
+          const ctx = await pluginManager.fireHook("beforeCommand", { command });
+          finalCommand = ctx.command || command;
+
+          const { invoke } = await import("@tauri-apps/api/core");
+          await invoke("write_to_pty", { sessionId: activePtyId, data: finalCommand + "\n" });
+
+          // Fire afterCommand hook (no output yet, that comes from PTY)
+          await pluginManager.fireHook("afterCommand", { command: finalCommand, exitCode: 0 });
+        } catch (err) {
+          // Avoid unhandled promise rejections from hooks or invoke()
+          // (UI is resilient; errors are visible in devtools)
+          // eslint-disable-next-line no-console
+          console.error("Failed to execute command", err);
+          try {
+            await pluginManager.fireHook("afterCommand", { command: finalCommand, exitCode: 1 });
+          } catch {
+            // Ignore hook failures
+          }
+        }
+      })();
     },
     [activePtyId, pluginManager],
   );
@@ -426,18 +452,58 @@ export default function App() {
   const paletteActions = useMemo<PaletteAction[]>(
     () => [
       { id: "new-tab", label: "New Terminal Tab", icon: "+", shortcut: "⌘T", action: handleNewTab },
-      { id: "split-h", label: "Split Horizontal", icon: "⬌", shortcut: "⌘\\", action: () => handleSplit("horizontal") },
-      { id: "split-v", label: "Split Vertical", icon: "⬍", shortcut: "⌘⇧\\", action: () => handleSplit("vertical") },
-      { id: "settings", label: "Open Settings", icon: "⚙", shortcut: "⌘,", action: () => setShowSettings(true) },
-      { id: "history", label: "View History", icon: "📋", shortcut: "⌘H", action: () => setShowHistory(true) },
+      {
+        id: "split-h",
+        label: "Split Horizontal",
+        icon: "⬌",
+        shortcut: "⌘\\",
+        action: () => handleSplit("horizontal"),
+      },
+      {
+        id: "split-v",
+        label: "Split Vertical",
+        icon: "⬍",
+        shortcut: "⌘⇧\\",
+        action: () => handleSplit("vertical"),
+      },
+      {
+        id: "settings",
+        label: "Open Settings",
+        icon: "⚙",
+        shortcut: "⌘,",
+        action: () => setShowSettings(true),
+      },
+      {
+        id: "history",
+        label: "View History",
+        icon: "📋",
+        shortcut: "⌘H",
+        action: () => setShowHistory(true),
+      },
       { id: "metrics", label: "Metrics Dashboard", icon: "📊", action: () => setShowMetrics(true) },
-      { id: "bookmarks", label: "Bookmarks", icon: "★", shortcut: "⌘B", action: () => setShowBookmarks(true) },
+      {
+        id: "bookmarks",
+        label: "Bookmarks",
+        icon: "★",
+        shortcut: "⌘B",
+        action: () => setShowBookmarks(true),
+      },
       { id: "templates", label: "Templates", icon: "⧉", action: () => setShowTemplates(true) },
       { id: "tools", label: "Tools", icon: "⚒", action: () => setShowTools(true) },
-      { id: "recording", label: "Recording Controls", icon: "⏺", action: () => setShowRecording(true) },
+      {
+        id: "recording",
+        label: "Recording Controls",
+        icon: "⏺",
+        action: () => setShowRecording(true),
+      },
       { id: "export", label: "Export Terminal", icon: "↓", action: () => setShowExport(true) },
       { id: "plugins", label: "Plugins", icon: "🔌", action: () => setShowPlugins(true) },
-      { id: "shortcuts", label: "Keyboard Shortcuts", icon: "⌨", action: () => setShowShortcuts(true) },
+      {
+        id: "shortcuts",
+        label: "Keyboard Shortcuts",
+        icon: "⌨",
+        action: () => setShowShortcuts(true),
+      },
       { id: "ssh", label: "SSH Connections", icon: "⇄", action: () => setShowSSH(true) },
       { id: "collab", label: "Collaborate", icon: "👥", action: () => setShowCollab(true) },
       { id: "cancel-agent", label: "Cancel Agent", icon: "✖", shortcut: "⌘.", action: cancel },
@@ -563,32 +629,19 @@ export default function App() {
       )}
 
       {showBookmarks && (
-        <BookmarksPanel
-          onClose={() => setShowBookmarks(false)}
-          onExecute={handleExecuteCommand}
-        />
+        <BookmarksPanel onClose={() => setShowBookmarks(false)} onExecute={handleExecuteCommand} />
       )}
 
-      {showShortcuts && (
-        <ShortcutsPanel onClose={() => setShowShortcuts(false)} />
-      )}
+      {showShortcuts && <ShortcutsPanel onClose={() => setShowShortcuts(false)} />}
 
-      {showPlugins && (
-        <PluginsPanel onClose={() => setShowPlugins(false)} />
-      )}
+      {showPlugins && <PluginsPanel onClose={() => setShowPlugins(false)} />}
 
       {showTools && (
-        <ToolsPanel
-          onClose={() => setShowTools(false)}
-          onExecute={handleExecuteCommand}
-        />
+        <ToolsPanel onClose={() => setShowTools(false)} onExecute={handleExecuteCommand} />
       )}
 
       {showCollab && (
-        <CollaborativePanel
-          onClose={() => setShowCollab(false)}
-          onExecute={handleExecuteCommand}
-        />
+        <CollaborativePanel onClose={() => setShowCollab(false)} onExecute={handleExecuteCommand} />
       )}
 
       {showRecording && (
@@ -599,31 +652,17 @@ export default function App() {
       )}
 
       {showExport && (
-        <ExportPanel
-          onClose={() => setShowExport(false)}
-          getTerminalContent={getTerminalContent}
-        />
+        <ExportPanel onClose={() => setShowExport(false)} getTerminalContent={getTerminalContent} />
       )}
 
-      {showSSH && (
-        <SSHPanel
-          onClose={() => setShowSSH(false)}
-          onConnect={handleExecuteCommand}
-        />
-      )}
+      {showSSH && <SSHPanel onClose={() => setShowSSH(false)} onConnect={handleExecuteCommand} />}
 
       {showMetrics && (
-        <MetricsPanel
-          onClose={() => setShowMetrics(false)}
-          currentMetrics={metrics}
-        />
+        <MetricsPanel onClose={() => setShowMetrics(false)} currentMetrics={metrics} />
       )}
 
       {showGlobalPalette && (
-        <GlobalPalette
-          onClose={() => setShowGlobalPalette(false)}
-          actions={paletteActions}
-        />
+        <GlobalPalette onClose={() => setShowGlobalPalette(false)} actions={paletteActions} />
       )}
     </div>
   );

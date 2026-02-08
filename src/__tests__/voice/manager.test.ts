@@ -83,9 +83,7 @@ describe("VoiceInputManager", () => {
       manager.subscribe(handler);
       manager.start();
       expect(handler).toHaveBeenCalled();
-      expect(handler).toHaveBeenCalledWith(
-        expect.objectContaining({ isListening: true }),
-      );
+      expect(handler).toHaveBeenCalledWith(expect.objectContaining({ isListening: true }));
     });
 
     it("returns an unsubscribe function", () => {

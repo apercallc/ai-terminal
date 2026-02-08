@@ -47,14 +47,7 @@ describe("StatusBar", () => {
   });
 
   it("shows step progress when executing", () => {
-    render(
-      <StatusBar
-        {...defaultProps}
-        agentState="executing"
-        currentStep={1}
-        totalSteps={3}
-      />,
-    );
+    render(<StatusBar {...defaultProps} agentState="executing" currentStep={1} totalSteps={3} />);
     expect(screen.getByText(/Step 2\/3/)).toBeInTheDocument();
   });
 

@@ -12,10 +12,7 @@ export interface LLMProvider {
   complete(request: LLMRequest): Promise<LLMResponse>;
 
   /** Send a streaming chat completion request */
-  stream(
-    request: LLMRequest,
-    onChunk: (chunk: StreamChunk) => void,
-  ): Promise<LLMResponse>;
+  stream(request: LLMRequest, onChunk: (chunk: StreamChunk) => void): Promise<LLMResponse>;
 
   /** Test that the provider connection works */
   testConnection(): Promise<boolean>;
@@ -32,7 +29,10 @@ export function estimateTokens(text: string): number {
 /**
  * Build the standard headers for an OpenAI-compatible API request.
  */
-export function buildHeaders(apiKey: string, extra?: Record<string, string>): Record<string, string> {
+export function buildHeaders(
+  apiKey: string,
+  extra?: Record<string, string>,
+): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
@@ -49,9 +49,7 @@ export function buildHeaders(apiKey: string, extra?: Record<string, string>): Re
  * Parse an SSE stream from a fetch Response.
  * Yields the `data:` payloads as parsed JSON.
  */
-export async function* parseSSEStream(
-  response: Response,
-): AsyncGenerator<Record<string, unknown>> {
+export async function* parseSSEStream(response: Response): AsyncGenerator<Record<string, unknown>> {
   const reader = response.body?.getReader();
   if (!reader) throw new Error("No response body");
 

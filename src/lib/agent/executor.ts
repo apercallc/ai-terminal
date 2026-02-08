@@ -17,8 +17,6 @@ export class AgentExecutor {
   private ptySessionId: string | null = null;
   private mode: ExecutionMode = "safe";
   private commandTimeout: number;
-  private outputCollector: string = "";
-  private unlistenOutput: (() => void) | null = null;
   private abortController: AbortController | null = null;
 
   constructor(
@@ -135,7 +133,6 @@ export class AgentExecutor {
     this.abortController?.abort();
     this.context.clear();
     this.stateMachine.dispatch({ type: "RESET" });
-    this.outputCollector = "";
   }
 
   /** Run all steps sequentially (auto mode). */
@@ -160,6 +157,7 @@ export class AgentExecutor {
 
   /** Execute a single command step via the PTY. */
   private async executeStep(step: CommandStep): Promise<void> {
+    if (this.abortController?.signal.aborted) return;
     if (!this.ptySessionId) {
       this.stateMachine.dispatch({
         type: "STEP_FAILED",
@@ -170,6 +168,7 @@ export class AgentExecutor {
 
     // Log the command
     await this.logCommand(step, true);
+    if (this.abortController?.signal.aborted) return;
 
     const startTime = Date.now();
     let output = "";
@@ -177,10 +176,12 @@ export class AgentExecutor {
 
     try {
       output = await this.runCommandInPty(step.command);
+      if (this.abortController?.signal.aborted) return;
       const duration = Date.now() - startTime;
 
       // Verify success with AI
       const verification = await this.planner.verifySuccess(step, output);
+      if (this.abortController?.signal.aborted) return;
       this.context.recordOutput(step.id, output);
 
       if (verification.success) {
@@ -211,6 +212,7 @@ export class AgentExecutor {
         await this.handleFailure(step, output, exitCode);
       }
     } catch (err) {
+      if (this.abortController?.signal.aborted) return;
       const duration = Date.now() - startTime;
       const errorMsg = err instanceof Error ? err.message : String(err);
       this.stateMachine.dispatch({
@@ -260,12 +262,60 @@ export class AgentExecutor {
   private async runCommandInPty(command: string): Promise<string> {
     if (!this.ptySessionId) throw new Error("No PTY session");
 
-    this.outputCollector = "";
+    const signal = this.abortController?.signal;
+    if (signal?.aborted) throw new Error("Cancelled");
 
-    // Set up output listener
+    let outputCollector = "";
+    let settled = false;
+    let shouldUnlisten = false;
+    let unlistenFn: (() => void) | null = null;
+
+    const requestUnlisten = () => {
+      shouldUnlisten = true;
+      if (unlistenFn) {
+        try {
+          unlistenFn();
+        } finally {
+          unlistenFn = null;
+        }
+      }
+    };
+
+    const setUnlisten = (fn: () => void) => {
+      if (shouldUnlisten) {
+        fn();
+        return;
+      }
+      unlistenFn = fn;
+    };
+
     const outputPromise = new Promise<string>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        resolve(this.outputCollector);
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+      const settleResolve = (value: string) => {
+        if (settled) return;
+        settled = true;
+        if (timeoutId) clearTimeout(timeoutId);
+        if (signal) signal.removeEventListener("abort", onAbort);
+        resolve(value);
+      };
+
+      const settleReject = (error: unknown) => {
+        if (settled) return;
+        settled = true;
+        if (timeoutId) clearTimeout(timeoutId);
+        if (signal) signal.removeEventListener("abort", onAbort);
+        reject(error);
+      };
+
+      const onAbort = () => {
+        settleReject(new Error("Cancelled"));
+      };
+
+      if (signal) signal.addEventListener("abort", onAbort, { once: true });
+
+      timeoutId = setTimeout(() => {
+        settleResolve(outputCollector);
       }, this.commandTimeout * 1000);
 
       // Use a unique marker to detect command completion
@@ -275,33 +325,35 @@ export class AgentExecutor {
       listen<{ session_id: string; data: string }>("pty-output", (event) => {
         if (event.payload.session_id !== this.ptySessionId) return;
 
-        this.outputCollector += event.payload.data;
+        outputCollector += event.payload.data;
 
         // Check for our completion marker
-        const markerIdx = this.outputCollector.indexOf(marker);
+        const markerIdx = outputCollector.indexOf(marker);
         if (markerIdx !== -1) {
-          clearTimeout(timeout);
-
-          // Extract output before the marker
-          const cleanOutput = this.outputCollector.slice(0, markerIdx).trim();
-          resolve(cleanOutput);
+          const cleanOutput = outputCollector.slice(0, markerIdx).trim();
+          settleResolve(cleanOutput);
         }
-      }).then((unlisten) => {
-        this.unlistenOutput = unlisten;
-      }).catch(reject);
+      })
+        .then((unlisten) => {
+          setUnlisten(unlisten);
+        })
+        .catch((err) => {
+          settleReject(err);
+        });
 
       // Send the command
       invoke("write_to_pty", {
         sessionId: this.ptySessionId,
         data: fullCommand + "\n",
-      }).catch(reject);
+      }).catch((err) => {
+        settleReject(err);
+      });
     });
 
     try {
       return await outputPromise;
     } finally {
-      this.unlistenOutput?.();
-      this.unlistenOutput = null;
+      requestUnlisten();
     }
   }
 

@@ -112,7 +112,10 @@ export class AgentPlanner {
   /**
    * Ask the LLM whether a step succeeded based on its output.
    */
-  async verifySuccess(step: CommandStep, output: string): Promise<{ success: boolean; reason: string }> {
+  async verifySuccess(
+    step: CommandStep,
+    output: string,
+  ): Promise<{ success: boolean; reason: string }> {
     const userMessage = [
       `Verify whether this command succeeded:`,
       `Command: ${step.command}`,
@@ -137,9 +140,7 @@ export class AgentPlanner {
         output.toLowerCase().includes("not found");
       return {
         success: !looksLikeError,
-        reason: looksLikeError
-          ? "Output contains error indicators"
-          : "Output appears normal",
+        reason: looksLikeError ? "Output contains error indicators" : "Output appears normal",
       };
     }
 

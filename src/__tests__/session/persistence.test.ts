@@ -11,7 +11,9 @@ describe("SessionPersistence", () => {
   describe("save/load", () => {
     it("saves and loads session", () => {
       persistence.save({
-        tabs: [{ id: "tab-1", label: "Terminal", ptySessionId: null, isConnected: false, cwd: "~" }],
+        tabs: [
+          { id: "tab-1", label: "Terminal", ptySessionId: null, isConnected: false, cwd: "~" },
+        ],
         activeTabId: "tab-1",
         splitLayout: {
           direction: "horizontal",
@@ -51,7 +53,9 @@ describe("SessionPersistence", () => {
   describe("clear", () => {
     it("clears saved session", () => {
       persistence.save({
-        tabs: [{ id: "tab-1", label: "Terminal", ptySessionId: null, isConnected: false, cwd: "~" }],
+        tabs: [
+          { id: "tab-1", label: "Terminal", ptySessionId: null, isConnected: false, cwd: "~" },
+        ],
         activeTabId: "tab-1",
         splitLayout: { direction: "horizontal", panes: [{ id: "p", tabId: "tab-1", size: 100 }] },
       });

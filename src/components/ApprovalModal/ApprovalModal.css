@@ -89,7 +89,7 @@
 
 .approval-command code,
 .approval-rollback code {
-  font-family: 'SF Mono', 'Fira Code', Menlo, monospace;
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
   font-size: 13px;
   color: var(--accent);
 }

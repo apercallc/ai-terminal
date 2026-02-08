@@ -1,8 +1,4 @@
-import type {
-  CollaborativeSession,
-  CollaborativeParticipant,
-  CollaborativeMessage,
-} from "@/types";
+import type { CollaborativeSession, CollaborativeParticipant, CollaborativeMessage } from "@/types";
 
 /**
  * Collaborative session manager using WebRTC data channels for peer-to-peer
@@ -10,7 +6,13 @@ import type {
  * session tokens for connection establishment.
  */
 
-type CollabEventType = "participant-joined" | "participant-left" | "message" | "command" | "output" | "disconnect";
+type CollabEventType =
+  | "participant-joined"
+  | "participant-left"
+  | "message"
+  | "command"
+  | "output"
+  | "disconnect";
 type CollabHandler = (data: unknown) => void;
 
 export class CollaborativeManager {
@@ -182,11 +184,13 @@ export class CollaborativeManager {
   /** Get the session share token (for clipboard sharing). */
   getShareToken(): string {
     if (!this.session) return "";
-    return btoa(JSON.stringify({
-      sessionId: this.session.id,
-      hostId: this.session.hostId,
-      createdAt: this.session.createdAt,
-    }));
+    return btoa(
+      JSON.stringify({
+        sessionId: this.session.id,
+        hostId: this.session.hostId,
+        createdAt: this.session.createdAt,
+      }),
+    );
   }
 
   /** Parse a share token to get session info. */

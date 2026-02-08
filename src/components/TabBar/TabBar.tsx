@@ -9,13 +9,7 @@ interface TabBarProps {
   onNewTab: () => void;
 }
 
-export function TabBar({
-  tabs,
-  activeTabId,
-  onSelectTab,
-  onCloseTab,
-  onNewTab,
-}: TabBarProps) {
+export function TabBar({ tabs, activeTabId, onSelectTab, onCloseTab, onNewTab }: TabBarProps) {
   return (
     <div className="tab-bar">
       <div className="tab-list">
@@ -43,7 +37,13 @@ export function TabBar({
       </div>
       <button className="tab-new" onClick={onNewTab} title="New Tab">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-          <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          <path
+            d="M7 1v12M1 7h12"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            fill="none"
+          />
         </svg>
       </button>
     </div>

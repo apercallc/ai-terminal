@@ -10,7 +10,8 @@ const BUILTIN_TOOLS: CustomTool[] = [
     id: "tool-system-info",
     name: "System Info",
     description: "Display system information (OS, CPU, memory, disk)",
-    command: "uname -a && sw_vers && sysctl -n machdep.cpu.brand_string && df -h / && echo 'Memory:' && sysctl -n hw.memsize | awk '{print $1/1024/1024/1024 \" GB\"}'",
+    command:
+      "uname -a && sw_vers && sysctl -n machdep.cpu.brand_string && df -h / && echo 'Memory:' && sysctl -n hw.memsize | awk '{print $1/1024/1024/1024 \" GB\"}'",
     icon: "💻",
     category: "System",
     variables: [],
@@ -19,12 +20,11 @@ const BUILTIN_TOOLS: CustomTool[] = [
     id: "tool-network-check",
     name: "Network Check",
     description: "Check network connectivity and DNS resolution",
-    command: "ping -c 3 {{host}} && echo '---' && nslookup {{host}} && echo '---' && curl -s -o /dev/null -w '%{http_code}' https://{{host}}",
+    command:
+      "ping -c 3 {{host}} && echo '---' && nslookup {{host}} && echo '---' && curl -s -o /dev/null -w '%{http_code}' https://{{host}}",
     icon: "🌐",
     category: "Network",
-    variables: [
-      { name: "host", label: "Host", type: "text", defaultValue: "google.com" },
-    ],
+    variables: [{ name: "host", label: "Host", type: "text", defaultValue: "google.com" }],
   },
   {
     id: "tool-port-check",
@@ -57,15 +57,14 @@ const BUILTIN_TOOLS: CustomTool[] = [
     command: "ps aux | grep -i '{{pattern}}' | grep -v grep",
     icon: "🔍",
     category: "System",
-    variables: [
-      { name: "pattern", label: "Process Name", type: "text", defaultValue: "node" },
-    ],
+    variables: [{ name: "pattern", label: "Process Name", type: "text", defaultValue: "node" }],
   },
   {
     id: "tool-git-summary",
     name: "Git Summary",
     description: "Get a summary of the current Git repository",
-    command: "echo '=== Branch ===' && git branch --show-current && echo '=== Status ===' && git status -s && echo '=== Recent Commits ===' && git log --oneline -5 && echo '=== Remotes ===' && git remote -v",
+    command:
+      "echo '=== Branch ===' && git branch --show-current && echo '=== Status ===' && git status -s && echo '=== Recent Commits ===' && git log --oneline -5 && echo '=== Remotes ===' && git remote -v",
     icon: "📊",
     category: "Git",
     variables: [],
@@ -83,12 +82,7 @@ const BUILTIN_TOOLS: CustomTool[] = [
         label: "Cleanup Action",
         type: "select",
         defaultValue: "system prune -f",
-        options: [
-          "system prune -f",
-          "image prune -f",
-          "container prune -f",
-          "volume prune -f",
-        ],
+        options: ["system prune -f", "image prune -f", "container prune -f", "volume prune -f"],
       },
     ],
   },
@@ -96,12 +90,11 @@ const BUILTIN_TOOLS: CustomTool[] = [
     id: "tool-ssl-check",
     name: "SSL Certificate Check",
     description: "Check SSL certificate details for a domain",
-    command: "echo | openssl s_client -servername {{domain}} -connect {{domain}}:443 2>/dev/null | openssl x509 -noout -dates -subject -issuer",
+    command:
+      "echo | openssl s_client -servername {{domain}} -connect {{domain}}:443 2>/dev/null | openssl x509 -noout -dates -subject -issuer",
     icon: "🔒",
     category: "Security",
-    variables: [
-      { name: "domain", label: "Domain", type: "text", defaultValue: "example.com" },
-    ],
+    variables: [{ name: "domain", label: "Domain", type: "text", defaultValue: "example.com" }],
   },
 ];
 

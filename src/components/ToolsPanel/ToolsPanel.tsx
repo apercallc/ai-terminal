@@ -88,7 +88,10 @@ export function ToolsPanel({ onClose, onExecute }: ToolsPanelProps) {
             </button>
             <button className="settings-close" onClick={onClose} aria-label="Close">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path fillRule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
+                <path
+                  fillRule="evenodd"
+                  d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"
+                />
               </svg>
             </button>
           </div>
@@ -98,30 +101,60 @@ export function ToolsPanel({ onClose, onExecute }: ToolsPanelProps) {
           <div className="tool-add-form">
             <div className="settings-field">
               <label>Tool Name</label>
-              <input type="text" value={newTool.name} onChange={(e) => setNewTool((p) => ({ ...p, name: e.target.value }))} placeholder="e.g. Port Check" />
+              <input
+                type="text"
+                value={newTool.name}
+                onChange={(e) => setNewTool((p) => ({ ...p, name: e.target.value }))}
+                placeholder="e.g. Port Check"
+              />
             </div>
             <div className="settings-field">
               <label>Command (use {"{{var}}"} for variables)</label>
-              <input type="text" value={newTool.command} onChange={(e) => setNewTool((p) => ({ ...p, command: e.target.value }))} placeholder="lsof -i :{{port}}" />
+              <input
+                type="text"
+                value={newTool.command}
+                onChange={(e) => setNewTool((p) => ({ ...p, command: e.target.value }))}
+                placeholder="lsof -i :{{port}}"
+              />
             </div>
             <div className="settings-field">
               <label>Description</label>
-              <input type="text" value={newTool.description} onChange={(e) => setNewTool((p) => ({ ...p, description: e.target.value }))} placeholder="What does this tool do?" />
+              <input
+                type="text"
+                value={newTool.description}
+                onChange={(e) => setNewTool((p) => ({ ...p, description: e.target.value }))}
+                placeholder="What does this tool do?"
+              />
             </div>
             <div className="settings-field">
               <label>Variables (comma-separated)</label>
-              <input type="text" value={newTool.variables} onChange={(e) => setNewTool((p) => ({ ...p, variables: e.target.value }))} placeholder="port, host" />
+              <input
+                type="text"
+                value={newTool.variables}
+                onChange={(e) => setNewTool((p) => ({ ...p, variables: e.target.value }))}
+                placeholder="port, host"
+              />
             </div>
             <div className="tool-add-actions">
-              <button className="settings-btn" onClick={handleAdd}>Create Tool</button>
-              <button className="text-btn" onClick={() => setShowAddForm(false)}>Cancel</button>
+              <button className="settings-btn" onClick={handleAdd}>
+                Create Tool
+              </button>
+              <button className="text-btn" onClick={() => setShowAddForm(false)}>
+                Cancel
+              </button>
             </div>
           </div>
         )}
 
         <div className="tools-content">
           <div className="tools-sidebar">
-            <input type="text" className="tools-search" placeholder="Search tools..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            <input
+              type="text"
+              className="tools-search"
+              placeholder="Search tools..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
             <div className="tools-list">
               {filtered.map((tool) => (
                 <div
@@ -151,7 +184,9 @@ export function ToolsPanel({ onClose, onExecute }: ToolsPanelProps) {
                         <input
                           type="text"
                           value={variableValues[v.name] || ""}
-                          onChange={(e) => setVariableValues((p) => ({ ...p, [v.name]: e.target.value }))}
+                          onChange={(e) =>
+                            setVariableValues((p) => ({ ...p, [v.name]: e.target.value }))
+                          }
                           placeholder={v.label || v.name}
                         />
                       </div>
@@ -160,12 +195,18 @@ export function ToolsPanel({ onClose, onExecute }: ToolsPanelProps) {
                 )}
 
                 <div className="tool-detail-actions">
-                  <button className="settings-btn" onClick={handleExecute}>Run Tool</button>
-                  <button className="text-btn danger" onClick={() => handleDelete(selectedTool.id)}>Delete</button>
+                  <button className="settings-btn" onClick={handleExecute}>
+                    Run Tool
+                  </button>
+                  <button className="text-btn danger" onClick={() => handleDelete(selectedTool.id)}>
+                    Delete
+                  </button>
                 </div>
               </>
             ) : (
-              <div className="tools-placeholder">Select a tool to view details and configure variables.</div>
+              <div className="tools-placeholder">
+                Select a tool to view details and configure variables.
+              </div>
             )}
           </div>
         </div>

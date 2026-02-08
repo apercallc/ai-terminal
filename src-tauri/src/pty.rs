@@ -331,7 +331,14 @@ pub fn list_directory(path: String) -> Result<serde_json::Value, String> {
         return Ok(serde_json::json!({ "entries": [], "path": path }));
     }
 
-    let mut entries: Vec<serde_json::Value> = Vec::new();
+    struct DirEntry {
+        name: String,
+        name_lower: String,
+        path: String,
+        is_dir: bool,
+    }
+
+    let mut entries: Vec<DirEntry> = Vec::new();
 
     match std::fs::read_dir(&target) {
         Ok(read_dir) => {
@@ -341,11 +348,12 @@ pub fn list_directory(path: String) -> Result<serde_json::Value, String> {
                 let is_dir = entry.file_type().map(|t| t.is_dir()).unwrap_or(false);
                 let full_path = entry.path().to_string_lossy().to_string();
 
-                entries.push(serde_json::json!({
-                    "name": name,
-                    "path": full_path,
-                    "isDir": is_dir,
-                }));
+                entries.push(DirEntry {
+                    name_lower: name.to_lowercase(),
+                    name,
+                    path: full_path,
+                    is_dir,
+                });
             }
         }
         Err(e) => {
@@ -354,22 +362,25 @@ pub fn list_directory(path: String) -> Result<serde_json::Value, String> {
     }
 
     // Sort: directories first, then alphabetically
-    entries.sort_by(|a, b| {
-        let a_dir = a["isDir"].as_bool().unwrap_or(false);
-        let b_dir = b["isDir"].as_bool().unwrap_or(false);
-        match (a_dir, b_dir) {
-            (true, false) => std::cmp::Ordering::Less,
-            (false, true) => std::cmp::Ordering::Greater,
-            _ => {
-                let a_name = a["name"].as_str().unwrap_or("");
-                let b_name = b["name"].as_str().unwrap_or("");
-                a_name.to_lowercase().cmp(&b_name.to_lowercase())
-            }
-        }
+    entries.sort_by(|a, b| match (a.is_dir, b.is_dir) {
+        (true, false) => std::cmp::Ordering::Less,
+        (false, true) => std::cmp::Ordering::Greater,
+        _ => a.name_lower.cmp(&b.name_lower),
     });
 
+    let json_entries: Vec<serde_json::Value> = entries
+        .into_iter()
+        .map(|e| {
+            serde_json::json!({
+                "name": e.name,
+                "path": e.path,
+                "isDir": e.is_dir,
+            })
+        })
+        .collect();
+
     Ok(serde_json::json!({
-        "entries": entries,
+        "entries": json_entries,
         "path": target.to_string_lossy().to_string(),
     }))
 }

@@ -65,13 +65,9 @@ export function VoiceButton({ onTranscript }: VoiceButtonProps) {
         {listening && <span className="voice-pulse" />}
       </button>
 
-      {interim && (
-        <div className="voice-interim">{interim}</div>
-      )}
+      {interim && <div className="voice-interim">{interim}</div>}
 
-      {error && (
-        <div className="voice-error">{error}</div>
-      )}
+      {error && <div className="voice-error">{error}</div>}
     </div>
   );
 }

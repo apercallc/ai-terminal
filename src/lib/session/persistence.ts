@@ -8,11 +8,7 @@ const SESSION_STORAGE_KEY = "ai_terminal_session";
  */
 export class SessionPersistence {
   /** Save the current session state. */
-  save(state: {
-    tabs: TerminalTab[];
-    activeTabId: string;
-    splitLayout: SplitLayout | null;
-  }): void {
+  save(state: { tabs: TerminalTab[]; activeTabId: string; splitLayout: SplitLayout | null }): void {
     try {
       const session: PersistedSession = {
         id: `session-${Date.now()}`,

@@ -8,10 +8,7 @@ interface RecordingControlsProps {
   terminalWrite: (data: string) => void;
 }
 
-export function RecordingControls({
-  onClose,
-  terminalWrite,
-}: RecordingControlsProps) {
+export function RecordingControls({ onClose, terminalWrite }: RecordingControlsProps) {
   const manager = useMemo(() => getRecordingManager(), []);
   const [recordings, setRecordings] = useState(manager.getAll());
   const [isRecording, setIsRecording] = useState(manager.isRecording());
@@ -131,7 +128,10 @@ export function RecordingControls({
             </button>
             <button className="settings-close" onClick={onClose} aria-label="Close">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path fillRule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
+                <path
+                  fillRule="evenodd"
+                  d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"
+                />
               </svg>
             </button>
           </div>
@@ -185,11 +185,8 @@ export function RecordingControls({
                   <div className="recording-info">
                     <span className="recording-name">{rec.name}</span>
                     <span className="recording-meta">
-                      {new Date(rec.startTime).toLocaleDateString()} ·{" "}
-                      {rec.events.length} events
-                      {rec.endTime && (
-                        <> · {((rec.endTime - rec.startTime) / 1000).toFixed(1)}s</>
-                      )}
+                      {new Date(rec.startTime).toLocaleDateString()} · {rec.events.length} events
+                      {rec.endTime && <> · {((rec.endTime - rec.startTime) / 1000).toFixed(1)}s</>}
                     </span>
                     {playingId === rec.id && (
                       <div className="recording-progress">
@@ -211,19 +208,11 @@ export function RecordingControls({
                         </button>
                       </>
                     ) : (
-                      <button
-                        className="rec-btn play"
-                        onClick={() => handlePlay(rec)}
-                        title="Play"
-                      >
+                      <button className="rec-btn play" onClick={() => handlePlay(rec)} title="Play">
                         ▶
                       </button>
                     )}
-                    <button
-                      className="rec-btn"
-                      onClick={() => handleExport(rec)}
-                      title="Export"
-                    >
+                    <button className="rec-btn" onClick={() => handleExport(rec)} title="Export">
                       ↓
                     </button>
                     <button

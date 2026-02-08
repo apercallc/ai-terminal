@@ -5,30 +5,170 @@ import type { KeyboardShortcut } from "@/types";
  */
 const DEFAULT_SHORTCUTS: KeyboardShortcut[] = [
   // Terminal
-  { id: "terminal-clear", action: "terminal.clear", label: "Clear Terminal", keys: ["Meta", "k"], category: "Terminal", editable: true },
-  { id: "terminal-copy", action: "terminal.copy", label: "Copy Selection", keys: ["Meta", "c"], category: "Terminal", editable: false },
-  { id: "terminal-paste", action: "terminal.paste", label: "Paste", keys: ["Meta", "v"], category: "Terminal", editable: false },
-  { id: "terminal-search", action: "terminal.search", label: "Search Terminal", keys: ["Meta", "f"], category: "Terminal", editable: true },
-  { id: "terminal-new-tab", action: "terminal.newTab", label: "New Tab", keys: ["Meta", "t"], category: "Terminal", editable: true },
-  { id: "terminal-close-tab", action: "terminal.closeTab", label: "Close Tab", keys: ["Meta", "w"], category: "Terminal", editable: true },
-  { id: "terminal-next-tab", action: "terminal.nextTab", label: "Next Tab", keys: ["Meta", "]"], category: "Terminal", editable: true },
-  { id: "terminal-prev-tab", action: "terminal.prevTab", label: "Previous Tab", keys: ["Meta", "["], category: "Terminal", editable: true },
-  { id: "terminal-split-h", action: "terminal.splitHorizontal", label: "Split Horizontally", keys: ["Meta", "d"], category: "Terminal", editable: true },
-  { id: "terminal-split-v", action: "terminal.splitVertical", label: "Split Vertically", keys: ["Meta", "Shift", "d"], category: "Terminal", editable: true },
+  {
+    id: "terminal-clear",
+    action: "terminal.clear",
+    label: "Clear Terminal",
+    keys: ["Meta", "k"],
+    category: "Terminal",
+    editable: true,
+  },
+  {
+    id: "terminal-copy",
+    action: "terminal.copy",
+    label: "Copy Selection",
+    keys: ["Meta", "c"],
+    category: "Terminal",
+    editable: false,
+  },
+  {
+    id: "terminal-paste",
+    action: "terminal.paste",
+    label: "Paste",
+    keys: ["Meta", "v"],
+    category: "Terminal",
+    editable: false,
+  },
+  {
+    id: "terminal-search",
+    action: "terminal.search",
+    label: "Search Terminal",
+    keys: ["Meta", "f"],
+    category: "Terminal",
+    editable: true,
+  },
+  {
+    id: "terminal-new-tab",
+    action: "terminal.newTab",
+    label: "New Tab",
+    keys: ["Meta", "t"],
+    category: "Terminal",
+    editable: true,
+  },
+  {
+    id: "terminal-close-tab",
+    action: "terminal.closeTab",
+    label: "Close Tab",
+    keys: ["Meta", "w"],
+    category: "Terminal",
+    editable: true,
+  },
+  {
+    id: "terminal-next-tab",
+    action: "terminal.nextTab",
+    label: "Next Tab",
+    keys: ["Meta", "]"],
+    category: "Terminal",
+    editable: true,
+  },
+  {
+    id: "terminal-prev-tab",
+    action: "terminal.prevTab",
+    label: "Previous Tab",
+    keys: ["Meta", "["],
+    category: "Terminal",
+    editable: true,
+  },
+  {
+    id: "terminal-split-h",
+    action: "terminal.splitHorizontal",
+    label: "Split Horizontally",
+    keys: ["Meta", "d"],
+    category: "Terminal",
+    editable: true,
+  },
+  {
+    id: "terminal-split-v",
+    action: "terminal.splitVertical",
+    label: "Split Vertically",
+    keys: ["Meta", "Shift", "d"],
+    category: "Terminal",
+    editable: true,
+  },
 
   // Agent
-  { id: "agent-focus-input", action: "agent.focusInput", label: "Focus Goal Input", keys: ["Meta", "l"], category: "Agent", editable: true },
-  { id: "agent-cancel", action: "agent.cancel", label: "Cancel Agent", keys: ["Escape"], category: "Agent", editable: false },
-  { id: "agent-approve", action: "agent.approve", label: "Approve Step", keys: ["Meta", "Enter"], category: "Agent", editable: true },
+  {
+    id: "agent-focus-input",
+    action: "agent.focusInput",
+    label: "Focus Goal Input",
+    keys: ["Meta", "l"],
+    category: "Agent",
+    editable: true,
+  },
+  {
+    id: "agent-cancel",
+    action: "agent.cancel",
+    label: "Cancel Agent",
+    keys: ["Escape"],
+    category: "Agent",
+    editable: false,
+  },
+  {
+    id: "agent-approve",
+    action: "agent.approve",
+    label: "Approve Step",
+    keys: ["Meta", "Enter"],
+    category: "Agent",
+    editable: true,
+  },
 
   // Application
-  { id: "app-settings", action: "app.settings", label: "Open Settings", keys: ["Meta", ","], category: "Application", editable: true },
-  { id: "app-history", action: "app.history", label: "Open History", keys: ["Meta", "h"], category: "Application", editable: true },
-  { id: "app-bookmarks", action: "app.bookmarks", label: "Open Bookmarks", keys: ["Meta", "b"], category: "Application", editable: true },
-  { id: "app-templates", action: "app.templates", label: "Open Templates", keys: ["Meta", "Shift", "t"], category: "Application", editable: true },
-  { id: "app-recording", action: "app.toggleRecording", label: "Toggle Recording", keys: ["Meta", "Shift", "r"], category: "Application", editable: true },
-  { id: "app-voice", action: "app.toggleVoice", label: "Toggle Voice Input", keys: ["Meta", "Shift", "v"], category: "Application", editable: true },
-  { id: "app-palette", action: "app.palette", label: "Command Palette", keys: ["Meta", "Shift", "p"], category: "Application", editable: true },
+  {
+    id: "app-settings",
+    action: "app.settings",
+    label: "Open Settings",
+    keys: ["Meta", ","],
+    category: "Application",
+    editable: true,
+  },
+  {
+    id: "app-history",
+    action: "app.history",
+    label: "Open History",
+    keys: ["Meta", "h"],
+    category: "Application",
+    editable: true,
+  },
+  {
+    id: "app-bookmarks",
+    action: "app.bookmarks",
+    label: "Open Bookmarks",
+    keys: ["Meta", "b"],
+    category: "Application",
+    editable: true,
+  },
+  {
+    id: "app-templates",
+    action: "app.templates",
+    label: "Open Templates",
+    keys: ["Meta", "Shift", "t"],
+    category: "Application",
+    editable: true,
+  },
+  {
+    id: "app-recording",
+    action: "app.toggleRecording",
+    label: "Toggle Recording",
+    keys: ["Meta", "Shift", "r"],
+    category: "Application",
+    editable: true,
+  },
+  {
+    id: "app-voice",
+    action: "app.toggleVoice",
+    label: "Toggle Voice Input",
+    keys: ["Meta", "Shift", "v"],
+    category: "Application",
+    editable: true,
+  },
+  {
+    id: "app-palette",
+    action: "app.palette",
+    label: "Command Palette",
+    keys: ["Meta", "Shift", "p"],
+    category: "Application",
+    editable: true,
+  },
 ];
 
 const SHORTCUTS_STORAGE_KEY = "ai_terminal_shortcuts";
@@ -82,9 +222,7 @@ export class ShortcutManager {
     if (!shortcut || !shortcut.editable) return false;
 
     // Check for conflicts
-    const conflict = this.shortcuts.find(
-      (s) => s.id !== id && this.keysMatch(s.keys, keys),
-    );
+    const conflict = this.shortcuts.find((s) => s.id !== id && this.keysMatch(s.keys, keys));
     if (conflict) return false;
 
     shortcut.keys = keys;
@@ -113,21 +251,36 @@ export class ShortcutManager {
     return keys
       .map((key) => {
         switch (key) {
-          case "Meta": return "⌘";
-          case "Control": return "⌃";
-          case "Alt": return "⌥";
-          case "Shift": return "⇧";
-          case "Enter": return "↵";
-          case "Escape": return "⎋";
-          case "ArrowUp": return "↑";
-          case "ArrowDown": return "↓";
-          case "ArrowLeft": return "←";
-          case "ArrowRight": return "→";
-          case "Backspace": return "⌫";
-          case "Delete": return "⌦";
-          case "Tab": return "⇥";
-          case " ": return "Space";
-          default: return key.length === 1 ? key.toUpperCase() : key;
+          case "Meta":
+            return "⌘";
+          case "Control":
+            return "⌃";
+          case "Alt":
+            return "⌥";
+          case "Shift":
+            return "⇧";
+          case "Enter":
+            return "↵";
+          case "Escape":
+            return "⎋";
+          case "ArrowUp":
+            return "↑";
+          case "ArrowDown":
+            return "↓";
+          case "ArrowLeft":
+            return "←";
+          case "ArrowRight":
+            return "→";
+          case "Backspace":
+            return "⌫";
+          case "Delete":
+            return "⌦";
+          case "Tab":
+            return "⇥";
+          case " ":
+            return "Space";
+          default:
+            return key.length === 1 ? key.toUpperCase() : key;
         }
       })
       .join("");
@@ -138,7 +291,8 @@ export class ShortcutManager {
 
     // Don't intercept when typing in inputs (unless it's a global hotkey)
     const target = e.target as HTMLElement;
-    const isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+    const isInput =
+      target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
 
     for (const shortcut of this.shortcuts) {
       if (this.eventMatchesShortcut(e, shortcut)) {
@@ -168,15 +322,15 @@ export class ShortcutManager {
     if (needsAlt !== e.altKey) return false;
     if (needsShift !== e.shiftKey) return false;
 
-    const mainKey = keys.find(
-      (k) => !["Meta", "Control", "Alt", "Shift"].includes(k),
-    );
+    const mainKey = keys.find((k) => !["Meta", "Control", "Alt", "Shift"].includes(k));
 
     if (!mainKey) return false;
 
     // Compare case-insensitively
-    return e.key.toLowerCase() === mainKey.toLowerCase() ||
-           e.code.toLowerCase() === `key${mainKey.toLowerCase()}`;
+    return (
+      e.key.toLowerCase() === mainKey.toLowerCase() ||
+      e.code.toLowerCase() === `key${mainKey.toLowerCase()}`
+    );
   }
 
   private keysMatch(a: string[], b: string[]): boolean {

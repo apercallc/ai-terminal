@@ -8,6 +8,12 @@ export default defineConfig({
   workers: 1,
   reporter: process.env.CI ? "github" : "html",
   timeout: 60_000,
+  webServer: {
+    command: "npm run dev",
+    url: "http://localhost:1420",
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
+  },
   use: {
     headless: true,
     screenshot: "only-on-failure",

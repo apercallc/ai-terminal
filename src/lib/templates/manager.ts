@@ -20,8 +20,18 @@ const BUILTIN_TEMPLATES: CommandTemplate[] = [
       "echo '# {{projectName}}' > README.md",
     ],
     variables: [
-      { name: "projectName", label: "Project Name", defaultValue: "my-python-project", placeholder: "my-python-project" },
-      { name: "packages", label: "Packages", defaultValue: "pytest black flake8", placeholder: "pytest flask requests" },
+      {
+        name: "projectName",
+        label: "Project Name",
+        defaultValue: "my-python-project",
+        placeholder: "my-python-project",
+      },
+      {
+        name: "packages",
+        label: "Packages",
+        defaultValue: "pytest black flake8",
+        placeholder: "pytest flask requests",
+      },
     ],
   },
   {
@@ -38,9 +48,24 @@ const BUILTIN_TEMPLATES: CommandTemplate[] = [
       "echo '# {{projectName}}' > README.md",
     ],
     variables: [
-      { name: "projectName", label: "Project Name", defaultValue: "my-node-project", placeholder: "my-node-project" },
-      { name: "packages", label: "Dependencies", defaultValue: "express", placeholder: "express cors dotenv" },
-      { name: "devPackages", label: "Dev Dependencies", defaultValue: "typescript @types/node", placeholder: "typescript eslint prettier" },
+      {
+        name: "projectName",
+        label: "Project Name",
+        defaultValue: "my-node-project",
+        placeholder: "my-node-project",
+      },
+      {
+        name: "packages",
+        label: "Dependencies",
+        defaultValue: "express",
+        placeholder: "express cors dotenv",
+      },
+      {
+        name: "devPackages",
+        label: "Dev Dependencies",
+        defaultValue: "typescript @types/node",
+        placeholder: "typescript eslint prettier",
+      },
     ],
   },
   {
@@ -55,9 +80,19 @@ const BUILTIN_TEMPLATES: CommandTemplate[] = [
       "npm install -D {{devPackages}}",
     ],
     variables: [
-      { name: "projectName", label: "Project Name", defaultValue: "my-react-app", placeholder: "my-react-app" },
+      {
+        name: "projectName",
+        label: "Project Name",
+        defaultValue: "my-react-app",
+        placeholder: "my-react-app",
+      },
       { name: "template", label: "Template", defaultValue: "react-ts", placeholder: "react-ts" },
-      { name: "devPackages", label: "Dev Dependencies", defaultValue: "eslint prettier", placeholder: "eslint prettier vitest" },
+      {
+        name: "devPackages",
+        label: "Dev Dependencies",
+        defaultValue: "eslint prettier",
+        placeholder: "eslint prettier vitest",
+      },
     ],
   },
   {
@@ -71,10 +106,25 @@ const BUILTIN_TEMPLATES: CommandTemplate[] = [
       "docker build -t {{imageName}} .",
     ],
     variables: [
-      { name: "baseImage", label: "Base Image", defaultValue: "node:20-alpine", placeholder: "node:20-alpine" },
-      { name: "installCmd", label: "Install Command", defaultValue: "npm ci --production", placeholder: "npm ci --production" },
+      {
+        name: "baseImage",
+        label: "Base Image",
+        defaultValue: "node:20-alpine",
+        placeholder: "node:20-alpine",
+      },
+      {
+        name: "installCmd",
+        label: "Install Command",
+        defaultValue: "npm ci --production",
+        placeholder: "npm ci --production",
+      },
       { name: "port", label: "Port", defaultValue: "3000", placeholder: "3000" },
-      { name: "runCmd", label: "Run Command", defaultValue: '["node", "index.js"]', placeholder: '["node", "index.js"]' },
+      {
+        name: "runCmd",
+        label: "Run Command",
+        defaultValue: '["node", "index.js"]',
+        placeholder: '["node", "index.js"]',
+      },
       { name: "imageName", label: "Image Name", defaultValue: "my-app", placeholder: "my-app" },
     ],
   },
@@ -91,8 +141,18 @@ const BUILTIN_TEMPLATES: CommandTemplate[] = [
       "git remote add origin {{remoteUrl}}",
     ],
     variables: [
-      { name: "commitMessage", label: "Initial Commit Message", defaultValue: "Initial commit", placeholder: "Initial commit" },
-      { name: "remoteUrl", label: "Remote URL", defaultValue: "", placeholder: "https://github.com/user/repo.git" },
+      {
+        name: "commitMessage",
+        label: "Initial Commit Message",
+        defaultValue: "Initial commit",
+        placeholder: "Initial commit",
+      },
+      {
+        name: "remoteUrl",
+        label: "Remote URL",
+        defaultValue: "",
+        placeholder: "https://github.com/user/repo.git",
+      },
     ],
   },
   {
@@ -108,8 +168,18 @@ const BUILTIN_TEMPLATES: CommandTemplate[] = [
       "go build ./...",
     ],
     variables: [
-      { name: "projectName", label: "Project Name", defaultValue: "my-go-project", placeholder: "my-go-project" },
-      { name: "modulePath", label: "Module Path", defaultValue: "github.com/user/my-go-project", placeholder: "github.com/user/my-go-project" },
+      {
+        name: "projectName",
+        label: "Project Name",
+        defaultValue: "my-go-project",
+        placeholder: "my-go-project",
+      },
+      {
+        name: "modulePath",
+        label: "Module Path",
+        defaultValue: "github.com/user/my-go-project",
+        placeholder: "github.com/user/my-go-project",
+      },
     ],
   },
   {
@@ -124,7 +194,12 @@ const BUILTIN_TEMPLATES: CommandTemplate[] = [
       "cargo test",
     ],
     variables: [
-      { name: "projectName", label: "Project Name", defaultValue: "my-rust-project", placeholder: "my-rust-project" },
+      {
+        name: "projectName",
+        label: "Project Name",
+        defaultValue: "my-rust-project",
+        placeholder: "my-rust-project",
+      },
       { name: "projectType", label: "Type (bin or lib)", defaultValue: "bin", placeholder: "bin" },
     ],
   },
@@ -142,9 +217,24 @@ const BUILTIN_TEMPLATES: CommandTemplate[] = [
     variables: [
       { name: "user", label: "SSH User", defaultValue: "", placeholder: "deploy" },
       { name: "host", label: "Host", defaultValue: "", placeholder: "example.com" },
-      { name: "deployDir", label: "Deploy Directory", defaultValue: "/opt/app", placeholder: "/opt/app" },
-      { name: "installCmd", label: "Install Command", defaultValue: "npm ci --production", placeholder: "npm ci --production" },
-      { name: "restartCmd", label: "Restart Command", defaultValue: "pm2 restart all", placeholder: "pm2 restart all" },
+      {
+        name: "deployDir",
+        label: "Deploy Directory",
+        defaultValue: "/opt/app",
+        placeholder: "/opt/app",
+      },
+      {
+        name: "installCmd",
+        label: "Install Command",
+        defaultValue: "npm ci --production",
+        placeholder: "npm ci --production",
+      },
+      {
+        name: "restartCmd",
+        label: "Restart Command",
+        defaultValue: "pm2 restart all",
+        placeholder: "pm2 restart all",
+      },
     ],
   },
   {
@@ -158,8 +248,18 @@ const BUILTIN_TEMPLATES: CommandTemplate[] = [
       "ls -la {{backupDir}}/",
     ],
     variables: [
-      { name: "dumpCmd", label: "Dump Command", defaultValue: "pg_dump -U postgres mydb", placeholder: "pg_dump -U postgres mydb" },
-      { name: "backupDir", label: "Backup Directory", defaultValue: "./backups", placeholder: "./backups" },
+      {
+        name: "dumpCmd",
+        label: "Dump Command",
+        defaultValue: "pg_dump -U postgres mydb",
+        placeholder: "pg_dump -U postgres mydb",
+      },
+      {
+        name: "backupDir",
+        label: "Backup Directory",
+        defaultValue: "./backups",
+        placeholder: "./backups",
+      },
       { name: "dbName", label: "Database Name", defaultValue: "mydb", placeholder: "mydb" },
     ],
   },
@@ -174,7 +274,12 @@ const BUILTIN_TEMPLATES: CommandTemplate[] = [
       "ls -la {{certDir}}/",
     ],
     variables: [
-      { name: "certDir", label: "Certificate Directory", defaultValue: "./certs", placeholder: "./certs" },
+      {
+        name: "certDir",
+        label: "Certificate Directory",
+        defaultValue: "./certs",
+        placeholder: "./certs",
+      },
       { name: "days", label: "Validity (days)", defaultValue: "365", placeholder: "365" },
       { name: "domain", label: "Domain", defaultValue: "localhost", placeholder: "localhost" },
     ],
@@ -246,10 +351,7 @@ export class TemplateManager {
   }
 
   /** Resolve a template's steps by substituting variables. */
-  resolveSteps(
-    template: CommandTemplate,
-    values: Record<string, string>,
-  ): string[] {
+  resolveSteps(template: CommandTemplate, values: Record<string, string>): string[] {
     return template.steps.map((step) => {
       let resolved = step;
       for (const v of template.variables) {

@@ -8,11 +8,9 @@ export class TerminalExporter {
    * Export terminal content to the specified format.
    * Triggers a browser download of the exported file.
    */
-  async export(
-    content: string,
-    options: ExportOptions,
-  ): Promise<void> {
-    const filename = options.filename ||
+  async export(content: string, options: ExportOptions): Promise<void> {
+    const filename =
+      options.filename ||
       `terminal-export-${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}`;
 
     switch (options.format) {
@@ -106,12 +104,16 @@ export class TerminalExporter {
   </style>
 </head>
 <body>
-  ${options.includeMetadata ? `
+  ${
+    options.includeMetadata
+      ? `
   <div class="header">
     <h1>AI Terminal Export</h1>
     ${options.includeTimestamp ? `<div>Exported: ${new Date().toLocaleString()}</div>` : ""}
     <div>Lines: ${content.split("\n").length}</div>
-  </div>` : ""}
+  </div>`
+      : ""
+  }
   <div class="terminal-content">${ansiToHtml}</div>
 </body>
 </html>`;
@@ -119,7 +121,11 @@ export class TerminalExporter {
     this.downloadFile(html, `${filename}.html`, "text/html");
   }
 
-  private async exportPdf(content: string, filename: string, options: ExportOptions): Promise<void> {
+  private async exportPdf(
+    content: string,
+    filename: string,
+    options: ExportOptions,
+  ): Promise<void> {
     // Create the HTML content in a hidden iframe, then print to PDF
     const ansiToHtml = this.convertAnsiToHtml(content);
 
@@ -157,12 +163,16 @@ export class TerminalExporter {
   </style>
 </head>
 <body>
-  ${options.includeMetadata ? `
+  ${
+    options.includeMetadata
+      ? `
   <div class="header">
     <h1>AI Terminal Export</h1>
     ${options.includeTimestamp ? `<div>Exported: ${new Date().toLocaleString()}</div>` : ""}
     <div>Lines: ${content.split("\n").length}</div>
-  </div>` : ""}
+  </div>`
+      : ""
+  }
   <pre>${ansiToHtml}</pre>
 </body>
 </html>`;
@@ -204,18 +214,26 @@ export class TerminalExporter {
   /** Convert ANSI escape codes to HTML spans. */
   private convertAnsiToHtml(text: string): string {
     // Escape HTML entities
-    let html = text
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
+    let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
     // ANSI color code map
     const colorMap: Record<string, string> = {
-      "30": "fg-black", "31": "fg-red", "32": "fg-green", "33": "fg-yellow",
-      "34": "fg-blue", "35": "fg-magenta", "36": "fg-cyan", "37": "fg-white",
-      "90": "fg-bright-black", "91": "fg-bright-red", "92": "fg-bright-green",
-      "93": "fg-bright-yellow", "94": "fg-bright-blue", "95": "fg-bright-magenta",
-      "96": "fg-bright-cyan", "97": "fg-bright-white",
+      "30": "fg-black",
+      "31": "fg-red",
+      "32": "fg-green",
+      "33": "fg-yellow",
+      "34": "fg-blue",
+      "35": "fg-magenta",
+      "36": "fg-cyan",
+      "37": "fg-white",
+      "90": "fg-bright-black",
+      "91": "fg-bright-red",
+      "92": "fg-bright-green",
+      "93": "fg-bright-yellow",
+      "94": "fg-bright-blue",
+      "95": "fg-bright-magenta",
+      "96": "fg-bright-cyan",
+      "97": "fg-bright-white",
     };
 
     // Replace ANSI codes with spans

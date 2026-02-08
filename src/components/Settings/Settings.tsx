@@ -23,7 +23,12 @@ const PROVIDER_OPTIONS: { value: ProviderType; label: string }[] = [
 
 const MODEL_OPTIONS: Record<ProviderType, string[]> = {
   openai: ["gpt-4", "gpt-4-turbo", "gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"],
-  anthropic: ["claude-sonnet-4-20250514", "claude-3-5-sonnet-20241022", "claude-3-haiku-20240307", "claude-3-opus-20240229"],
+  anthropic: [
+    "claude-sonnet-4-20250514",
+    "claude-3-5-sonnet-20241022",
+    "claude-3-haiku-20240307",
+    "claude-3-opus-20240229",
+  ],
   local: ["qwen2.5-7b-instruct", "llama-3.1-8b-instruct", "mistral-7b-instruct", "codellama-7b"],
 };
 
@@ -75,7 +80,10 @@ export function Settings({
           <h2>Settings</h2>
           <button className="settings-close" onClick={onClose} aria-label="Close settings">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path fillRule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
+              <path
+                fillRule="evenodd"
+                d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"
+              />
             </svg>
           </button>
         </div>
@@ -251,7 +259,9 @@ export function Settings({
                 min={0}
                 max={10}
                 value={settings.maxRetries}
-                onChange={(e) => onUpdateSettings({ maxRetries: parseInt(e.target.value, 10) || 3 })}
+                onChange={(e) =>
+                  onUpdateSettings({ maxRetries: parseInt(e.target.value, 10) || 3 })
+                }
               />
             </div>
             <div className="settings-field">

@@ -8,21 +8,17 @@ interface CollaborativePanelProps {
   onExecute: (command: string) => void;
 }
 
-export function CollaborativePanel({
-  onClose,
-  onExecute,
-}: CollaborativePanelProps) {
+export function CollaborativePanel({ onClose, onExecute }: CollaborativePanelProps) {
   const manager = useMemo(() => getCollaborativeManager(), []);
-  const [session, setSession] = useState<CollaborativeSession | null>(
-    manager.getSession(),
-  );
+  const [session, setSession] = useState<CollaborativeSession | null>(manager.getSession());
   const [joinToken, setJoinToken] = useState("");
   const [chatInput, setChatInput] = useState("");
   const [userName, setUserName] = useState("User");
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setSession(manager.getSession() ? { ...manager.getSession()! } : null);
+      const next = manager.getSession();
+      setSession(next ? { ...next } : null);
     }, 1000);
     return () => clearInterval(interval);
   }, [manager]);
@@ -67,7 +63,10 @@ export function CollaborativePanel({
           <h2>Collaborative Session</h2>
           <button className="settings-close" onClick={onClose} aria-label="Close">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path fillRule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
+              <path
+                fillRule="evenodd"
+                d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"
+              />
             </svg>
           </button>
         </div>
@@ -141,10 +140,7 @@ export function CollaborativePanel({
             <div className="collab-participants">
               {session.participants.map((p) => (
                 <div key={p.id} className="collab-participant">
-                  <span
-                    className="collab-avatar"
-                    style={{ background: stringToColor(p.name) }}
-                  >
+                  <span className="collab-avatar" style={{ background: stringToColor(p.name) }}>
                     {p.name.charAt(0).toUpperCase()}
                   </span>
                   <span className="collab-name">{p.name}</span>
@@ -156,9 +152,7 @@ export function CollaborativePanel({
             <div className="collab-chat">
               <div className="collab-messages">
                 {manager.getMessages().length === 0 ? (
-                  <div className="collab-empty-chat">
-                    No messages yet. Start chatting!
-                  </div>
+                  <div className="collab-empty-chat">No messages yet. Start chatting!</div>
                 ) : (
                   manager.getMessages().map((msg: CollaborativeMessage) => (
                     <ChatMessage
@@ -182,10 +176,13 @@ export function CollaborativePanel({
                   onKeyDown={(e) => e.key === "Enter" && handleChat()}
                   placeholder="Type a message..."
                 />
-                <button className="text-btn" onClick={() => {
-                  const cmd = prompt("Share a command:");
-                  if (cmd) handleShareCommand(cmd);
-                }}>
+                <button
+                  className="text-btn"
+                  onClick={() => {
+                    const cmd = prompt("Share a command:");
+                    if (cmd) handleShareCommand(cmd);
+                  }}
+                >
                   Share Cmd
                 </button>
                 <button className="settings-btn" onClick={handleChat}>

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import type { AgentState, CommandSuggestion, DirectoryEntry } from "@/types";
 import { getSuggestionEngine } from "@/lib/suggestions/engine";
 import { CommandPalette } from "@/components/CommandPalette/CommandPalette";
@@ -13,13 +13,31 @@ interface GoalInputProps {
   ptySessionId?: string | null;
 }
 
-export function GoalInput({ onSubmit, onCancel, agentState, disabled, ptySessionId: _ptySessionId }: GoalInputProps) {
+export function GoalInput({
+  onSubmit,
+  onCancel,
+  agentState,
+  disabled,
+  ptySessionId: _ptySessionId,
+}: GoalInputProps) {
   const [value, setValue] = useState("");
   const [suggestions, setSuggestions] = useState<CommandSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const pathRequestRef = useRef(0); // track stale async requests
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
   const engine = useMemo(() => getSuggestionEngine(), []);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+        blurTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -43,7 +61,7 @@ export function GoalInput({ onSubmit, onCancel, agentState, disabled, ptySession
 
       try {
         const { invoke } = await import("@tauri-apps/api/core");
-        const result = await invoke("list_directory", { path: parsed.dirToList }) as {
+        const result = (await invoke("list_directory", { path: parsed.dirToList })) as {
           entries: DirectoryEntry[];
           path: string;
         };
@@ -81,17 +99,25 @@ export function GoalInput({ onSubmit, onCancel, agentState, disabled, ptySession
       const parsed = engine.parsePathInput(newValue);
       if (parsed) {
         // Async path completion
-        fetchPathSuggestions(newValue).then((pathResults) => {
-          if (pathResults && pathResults.length > 0) {
-            setSuggestions(pathResults);
-            setShowSuggestions(true);
-          } else {
-            // Fall back to regular suggestions
+        fetchPathSuggestions(newValue)
+          .then((pathResults) => {
+            if (!mountedRef.current) return;
+            if (pathResults && pathResults.length > 0) {
+              setSuggestions(pathResults);
+              setShowSuggestions(true);
+            } else {
+              // Fall back to regular suggestions
+              const results = engine.getSuggestions(newValue.trim(), 8);
+              setSuggestions(results);
+              setShowSuggestions(results.length > 0);
+            }
+          })
+          .catch(() => {
+            if (!mountedRef.current) return;
             const results = engine.getSuggestions(newValue.trim(), 8);
             setSuggestions(results);
             setShowSuggestions(results.length > 0);
-          }
-        });
+          });
       } else {
         // Regular command suggestions
         const results = engine.getSuggestions(newValue.trim(), 8);
@@ -132,12 +158,18 @@ export function GoalInput({ onSubmit, onCancel, agentState, disabled, ptySession
 
   const placeholder = (() => {
     switch (agentState) {
-      case "planning": return "Generating plan...";
-      case "executing": return "Executing commands...";
-      case "analyzing": return "Analyzing output...";
-      case "retrying": return "Retrying...";
-      case "awaiting_approval": return "Waiting for approval...";
-      default: return 'Enter a goal (e.g., "install node")';
+      case "planning":
+        return "Generating plan...";
+      case "executing":
+        return "Executing commands...";
+      case "analyzing":
+        return "Analyzing output...";
+      case "retrying":
+        return "Retrying...";
+      case "awaiting_approval":
+        return "Waiting for approval...";
+      default:
+        return 'Enter a goal (e.g., "install node")';
     }
   })();
 
@@ -149,11 +181,7 @@ export function GoalInput({ onSubmit, onCancel, agentState, disabled, ptySession
             <span className="spinner" aria-label="Loading" />
           ) : (
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path
-                d="M8 1L3 5h3v6h4V5h3L8 1z"
-                fill="currentColor"
-                transform="rotate(90 8 8)"
-              />
+              <path d="M8 1L3 5h3v6h4V5h3L8 1z" fill="currentColor" transform="rotate(90 8 8)" />
             </svg>
           )}
         </span>
@@ -171,7 +199,11 @@ export function GoalInput({ onSubmit, onCancel, agentState, disabled, ptySession
           }}
           onBlur={() => {
             // Delay to allow click on suggestion
-            setTimeout(() => setShowSuggestions(false), 200);
+            if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+            blurTimeoutRef.current = setTimeout(() => {
+              if (!mountedRef.current) return;
+              setShowSuggestions(false);
+            }, 200);
           }}
           placeholder={placeholder}
           disabled={disabled || isWorking}

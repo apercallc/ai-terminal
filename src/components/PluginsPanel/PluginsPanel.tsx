@@ -51,15 +51,15 @@ export function PluginsPanel({ onClose }: PluginsPanelProps) {
         <div className="plugins-header">
           <h2>Plugins</h2>
           <div className="plugins-header-actions">
-            <button
-              className="text-btn"
-              onClick={() => setShowInstall(!showInstall)}
-            >
+            <button className="text-btn" onClick={() => setShowInstall(!showInstall)}>
               + Install
             </button>
             <button className="settings-close" onClick={onClose} aria-label="Close">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path fillRule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
+                <path
+                  fillRule="evenodd"
+                  d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"
+                />
               </svg>
             </button>
           </div>
@@ -131,9 +131,7 @@ function PluginItem({
           <span className="plugin-name">{plugin.name}</span>
           <span className="plugin-version">v{plugin.version}</span>
         </div>
-        {plugin.description && (
-          <p className="plugin-desc">{plugin.description}</p>
-        )}
+        {plugin.description && <p className="plugin-desc">{plugin.description}</p>}
         {plugin.hooks && plugin.hooks.length > 0 && (
           <div className="plugin-hooks">
             {plugin.hooks.map((h, i) => (
@@ -153,11 +151,11 @@ function PluginItem({
           />
           <span className="toggle-slider" />
         </label>
-        {(
+        {
           <button className="plugin-uninstall" onClick={onUninstall}>
             Uninstall
           </button>
-        )}
+        }
       </div>
     </div>
   );

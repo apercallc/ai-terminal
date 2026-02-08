@@ -163,7 +163,7 @@
 }
 
 .metrics-session-id {
-  font-family: 'SF Mono', monospace;
+  font-family: "SF Mono", monospace;
   color: var(--text-muted);
   font-size: 10px;
 }

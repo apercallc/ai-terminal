@@ -1,8 +1,15 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::collections::VecDeque;
 use std::fs::{self, OpenOptions};
-use std::io::Write;
+use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
+
+#[cfg(unix)]
+use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+
+#[cfg(unix)]
+use std::fs::Permissions;
 
 /// A single log entry for an executed command.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,6 +47,12 @@ fn get_log_dir() -> PathBuf {
     let base = dirs::data_local_dir().unwrap_or_else(|| PathBuf::from("/tmp"));
     let log_dir = base.join("com.aiterminal.app").join("logs");
     fs::create_dir_all(&log_dir).ok();
+
+    #[cfg(unix)]
+    {
+        let _ = fs::set_permissions(&log_dir, Permissions::from_mode(0o700));
+    }
+
     log_dir
 }
 
@@ -90,9 +103,15 @@ pub fn write_log(
         .map_err(|e| format!("Failed to serialize log entry: {}", e))?;
 
     let log_path = get_log_file_path();
-    let mut file = OpenOptions::new()
-        .create(true)
-        .append(true)
+    let mut options = OpenOptions::new();
+    options.create(true).append(true);
+
+    #[cfg(unix)]
+    {
+        options.mode(0o600);
+    }
+
+    let mut file = options
         .open(&log_path)
         .map_err(|e| format!("Failed to open log file: {}", e))?;
 
@@ -109,40 +128,42 @@ pub fn get_log_entries(
     limit: Option<usize>,
 ) -> Result<Vec<LogEntry>, String> {
     let log_dir = get_log_dir();
-    let mut entries: Vec<LogEntry> = Vec::new();
+    let mut entries: VecDeque<LogEntry> = VecDeque::new();
+    let max_entries = limit.unwrap_or(usize::MAX);
 
     let target_date = date.unwrap_or_else(|| Utc::now().format("%Y-%m-%d").to_string());
     let log_path = log_dir.join(format!("audit-{}.jsonl", target_date));
 
     if !log_path.exists() {
-        return Ok(entries);
+        return Ok(Vec::new());
     }
 
-    let content =
-        fs::read_to_string(&log_path).map_err(|e| format!("Failed to read log file: {}", e))?;
+    let file = fs::File::open(&log_path).map_err(|e| format!("Failed to open log file: {}", e))?;
+    let reader = BufReader::new(file);
 
-    for line in content.lines() {
+    for line in reader.lines() {
+        let line = line.map_err(|e| format!("Failed to read log file: {}", e))?;
         if line.trim().is_empty() {
             continue;
         }
-        if let Ok(entry) = serde_json::from_str::<LogEntry>(line) {
+        if let Ok(entry) = serde_json::from_str::<LogEntry>(&line) {
             if let Some(ref sid) = session_id {
                 if &entry.session_id != sid {
                     continue;
                 }
             }
-            entries.push(entry);
+
+            entries.push_back(entry);
+            if max_entries != usize::MAX && entries.len() > max_entries {
+                entries.pop_front();
+            }
         }
     }
 
-    // Return most recent first
-    entries.reverse();
-
-    if let Some(max) = limit {
-        entries.truncate(max);
-    }
-
-    Ok(entries)
+    // The JSONL file is chronological; return most recent first.
+    let mut out: Vec<LogEntry> = entries.into_iter().collect();
+    out.reverse();
+    Ok(out)
 }
 
 /// Get all available log dates (for browsing history).

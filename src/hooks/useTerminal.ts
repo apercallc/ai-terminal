@@ -194,19 +194,16 @@ export function useTerminal(options: UseTerminalOptions): UseTerminalReturn {
     let unlisten: (() => void) | null = null;
 
     const setup = async () => {
-      unlisten = await listen<{ session_id: string; data: string }>(
-        "pty-output",
-        (event) => {
-          if (event.payload.session_id === sessionIdRef.current) {
-            terminalRef.current?.write(event.payload.data);
-            // Record output for terminal recording
-            const rm = getRecordingManager();
-            if (rm.isRecording()) {
-              rm.recordOutput(event.payload.data);
-            }
+      unlisten = await listen<{ session_id: string; data: string }>("pty-output", (event) => {
+        if (event.payload.session_id === sessionIdRef.current) {
+          terminalRef.current?.write(event.payload.data);
+          // Record output for terminal recording
+          const rm = getRecordingManager();
+          if (rm.isRecording()) {
+            rm.recordOutput(event.payload.data);
           }
-        },
-      );
+        }
+      });
     };
 
     setup();
@@ -224,9 +221,7 @@ export function useTerminal(options: UseTerminalOptions): UseTerminalReturn {
       unlisten = await listen<string>("pty-exit", (event) => {
         if (event.payload === sessionIdRef.current) {
           setIsConnected(false);
-          terminalRef.current?.writeln(
-            "\r\n\x1b[33m[Shell session ended]\x1b[0m\r\n",
-          );
+          terminalRef.current?.writeln("\r\n\x1b[33m[Shell session ended]\x1b[0m\r\n");
         }
       });
     };
@@ -241,8 +236,7 @@ export function useTerminal(options: UseTerminalOptions): UseTerminalReturn {
   // Update theme
   useEffect(() => {
     if (!terminalRef.current) return;
-    terminalRef.current.options.theme =
-      options.theme === "dark" ? DARK_THEME : LIGHT_THEME;
+    terminalRef.current.options.theme = options.theme === "dark" ? DARK_THEME : LIGHT_THEME;
   }, [options.theme]);
 
   const writeToDisplay = useCallback((data: string) => {
@@ -251,9 +245,7 @@ export function useTerminal(options: UseTerminalOptions): UseTerminalReturn {
 
   const sendInput = useCallback((data: string) => {
     if (sessionIdRef.current) {
-      invoke("write_to_pty", { sessionId: sessionIdRef.current, data }).catch(
-        () => {},
-      );
+      invoke("write_to_pty", { sessionId: sessionIdRef.current, data }).catch(() => {});
     }
   }, []);
 

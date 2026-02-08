@@ -1,8 +1,4 @@
-import type {
-  PluginManifest,
-  PluginHookType,
-  PluginContext,
-} from "@/types";
+import type { PluginManifest, PluginHookType, PluginContext } from "@/types";
 
 const PLUGINS_STORAGE_KEY = "ai_terminal_plugins";
 
@@ -94,6 +90,7 @@ export class PluginManager {
           ctx = { ...ctx, ...result };
         }
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.error(`Plugin ${pluginId} hook ${type} error:`, err);
       }
     }
@@ -114,14 +111,14 @@ export class PluginManager {
         description: "Logs all command output to the console for debugging",
         author: "AI Terminal",
         enabled: false,
-        hooks: [
-          { type: "afterCommand", handler: "logOutput" },
-        ],
+        hooks: [{ type: "afterCommand", handler: "logOutput" }],
       },
       handlers: {
         logOutput: (ctx: PluginContext) => {
           if (ctx.command && ctx.output) {
+            // eslint-disable-next-line no-console
             console.log(`[Plugin:OutputLogger] ${ctx.command} → exit ${ctx.exitCode}`);
+            // eslint-disable-next-line no-console
             console.log(ctx.output.slice(0, 500));
           }
         },
@@ -144,16 +141,17 @@ export class PluginManager {
         description: "Tracks command execution statistics in the current session",
         author: "AI Terminal",
         enabled: true,
-        hooks: [
-          { type: "afterCommand", handler: "trackStats" },
-        ],
+        hooks: [{ type: "afterCommand", handler: "trackStats" }],
       },
       handlers: {
         trackStats: (ctx: PluginContext) => {
           stats.total++;
           if (ctx.exitCode === 0) stats.success++;
           else stats.failed++;
-          console.debug(`[Plugin:Stats] Total: ${stats.total}, Success: ${stats.success}, Failed: ${stats.failed}`);
+          // eslint-disable-next-line no-console
+          console.debug(
+            `[Plugin:Stats] Total: ${stats.total}, Success: ${stats.success}, Failed: ${stats.failed}`,
+          );
         },
       },
     };
@@ -185,6 +183,7 @@ export class PluginManager {
         },
         endTimer: (ctx: PluginContext) => {
           const duration = Date.now() - startTime;
+          // eslint-disable-next-line no-console
           console.log(`[Plugin:Timer] ${ctx.command} took ${duration}ms`);
         },
       },

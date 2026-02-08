@@ -22,7 +22,10 @@ export const invoke = vi.fn(async (cmd: string, args?: any) => {
   }
 });
 
-function mockListDirectory(path?: string): { entries: Array<{ name: string; path: string; isDir: boolean }>; path: string } {
+function mockListDirectory(path?: string): {
+  entries: Array<{ name: string; path: string; isDir: boolean }>;
+  path: string;
+} {
   const resolvedPath = path === "." || !path ? "/Users/test" : path;
   // Provide mock filesystem entries
   const mockFs: Record<string, Array<{ name: string; isDir: boolean }>> = {

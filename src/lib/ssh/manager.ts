@@ -87,10 +87,7 @@ export class SSHManager {
   /**
    * Connect to a remote host by writing the SSH command to the PTY.
    */
-  async connect(
-    connection: SSHConnection,
-    ptySessionId: string,
-  ): Promise<void> {
+  async connect(connection: SSHConnection, ptySessionId: string): Promise<void> {
     const command = this.buildConnectCommand(connection);
 
     // Write the SSH command to the PTY
@@ -107,10 +104,7 @@ export class SSHManager {
   }
 
   /** Disconnect by sending exit/logout to the PTY. */
-  async disconnect(
-    connectionId: string,
-    ptySessionId: string,
-  ): Promise<void> {
+  async disconnect(connectionId: string, ptySessionId: string): Promise<void> {
     await invoke("write_to_pty", {
       sessionId: ptySessionId,
       data: "exit\n",

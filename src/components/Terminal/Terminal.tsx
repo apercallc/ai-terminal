@@ -20,13 +20,10 @@ export function TerminalView({
   onBufferReady,
   onCwdChange: _onCwdChange,
 }: TerminalProps) {
-  const {
-    containerRef,
-    sessionId,
-    isConnected,
-    focus,
-    getBufferContent,
-  } = useTerminal({ theme, scrollbackLimit });
+  const { containerRef, sessionId, isConnected, focus, getBufferContent } = useTerminal({
+    theme,
+    scrollbackLimit,
+  });
 
   useEffect(() => {
     if (sessionId) {

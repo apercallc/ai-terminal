@@ -27,9 +27,7 @@ export class SafetyLogger {
         riskLevel: options.riskLevel,
         approved: options.approved,
         exitCode: options.exitCode ?? null,
-        outputPreview: options.outputPreview
-          ? options.outputPreview.slice(0, 500)
-          : null,
+        outputPreview: options.outputPreview ? options.outputPreview.slice(0, 500) : null,
         sessionId: this.sessionId,
       });
     } catch (err) {
@@ -38,21 +36,19 @@ export class SafetyLogger {
   }
 
   /** Get log entries from the backend. */
-  async getEntries(options?: {
-    date?: string;
-    sessionId?: string;
-    limit?: number;
-  }): Promise<Array<{
-    id: string;
-    timestamp: string;
-    command: string;
-    source: string;
-    risk_level: string;
-    approved: boolean;
-    exit_code: number | null;
-    output_preview: string | null;
-    session_id: string;
-  }>> {
+  async getEntries(options?: { date?: string; sessionId?: string; limit?: number }): Promise<
+    Array<{
+      id: string;
+      timestamp: string;
+      command: string;
+      source: string;
+      risk_level: string;
+      approved: boolean;
+      exit_code: number | null;
+      output_preview: string | null;
+      session_id: string;
+    }>
+  > {
     try {
       return await invoke("get_log_entries", {
         date: options?.date ?? null,

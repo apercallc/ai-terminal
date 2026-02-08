@@ -22,9 +22,7 @@ export function HistoryView({ history, onClose, onExport }: HistoryViewProps) {
     if (search) {
       const q = search.toLowerCase();
       items = items.filter(
-        (r) =>
-          r.command.toLowerCase().includes(q) ||
-          r.output.toLowerCase().includes(q),
+        (r) => r.command.toLowerCase().includes(q) || r.output.toLowerCase().includes(q),
       );
     }
 
@@ -42,7 +40,10 @@ export function HistoryView({ history, onClose, onExport }: HistoryViewProps) {
             </button>
             <button className="settings-close" onClick={onClose} aria-label="Close history">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path fillRule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
+                <path
+                  fillRule="evenodd"
+                  d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"
+                />
               </svg>
             </button>
           </div>
@@ -95,7 +96,9 @@ export function HistoryView({ history, onClose, onExport }: HistoryViewProps) {
         </div>
 
         <div className="history-footer">
-          <span>{filtered.length} command{filtered.length !== 1 ? "s" : ""}</span>
+          <span>
+            {filtered.length} command{filtered.length !== 1 ? "s" : ""}
+          </span>
         </div>
       </div>
     </div>
@@ -132,10 +135,7 @@ function HistoryItem({ record }: { record: ExecutionRecord }) {
         </span>
         <code className="history-command">{record.command}</code>
         <span className="history-meta">
-          <span
-            className="history-risk"
-            style={{ color: getRiskColor(record.riskLevel) }}
-          >
+          <span className="history-risk" style={{ color: getRiskColor(record.riskLevel) }}>
             {getRiskLabel(record.riskLevel)}
           </span>
           <span className="history-time">{formatTime(record.timestamp)}</span>

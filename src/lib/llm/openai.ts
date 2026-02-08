@@ -47,10 +47,7 @@ export class OpenAIProvider implements LLMProvider {
     };
   }
 
-  async stream(
-    request: LLMRequest,
-    onChunk: (chunk: StreamChunk) => void,
-  ): Promise<LLMResponse> {
+  async stream(request: LLMRequest, onChunk: (chunk: StreamChunk) => void): Promise<LLMResponse> {
     const url = `${this.baseUrl}/chat/completions`;
     const body = {
       model: this.model,
@@ -75,7 +72,9 @@ export class OpenAIProvider implements LLMProvider {
     let finishReason = "stop";
 
     for await (const data of parseSSEStream(response)) {
-      const delta = (data.choices as Array<{ delta?: { content?: string }; finish_reason?: string }>)?.[0];
+      const delta = (
+        data.choices as Array<{ delta?: { content?: string }; finish_reason?: string }>
+      )?.[0];
       if (delta?.delta?.content) {
         fullContent += delta.delta.content;
         onChunk({ content: delta.delta.content, done: false });

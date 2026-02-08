@@ -33,9 +33,7 @@ export function MetricsPanel({ onClose, currentMetrics }: MetricsPanelProps) {
     return `${seconds}s`;
   };
 
-  const successPercent = aggregate.totalCommands > 0
-    ? Math.round(aggregate.successRate * 100)
-    : 0;
+  const successPercent = aggregate.totalCommands > 0 ? Math.round(aggregate.successRate * 100) : 0;
   const failPercent = 100 - successPercent;
 
   // Count sessions per provider
@@ -119,10 +117,7 @@ export function MetricsPanel({ onClose, currentMetrics }: MetricsPanelProps) {
                     </div>
                   )}
                   {failPercent > 0 && aggregate.totalCommands > 0 && (
-                    <div
-                      className="metrics-bar-fill danger"
-                      style={{ width: `${failPercent}%` }}
-                    >
+                    <div className="metrics-bar-fill danger" style={{ width: `${failPercent}%` }}>
                       {failPercent > 5 ? `${failPercent}%` : ""}
                     </div>
                   )}
@@ -136,7 +131,13 @@ export function MetricsPanel({ onClose, currentMetrics }: MetricsPanelProps) {
                   <div className="metrics-provider-list">
                     {Object.entries(providerCounts).map(([provider, count]) => (
                       <div key={provider} className="metrics-provider-badge">
-                        <span>{provider === "openai" ? "OpenAI" : provider === "anthropic" ? "Anthropic" : "Local"}</span>
+                        <span>
+                          {provider === "openai"
+                            ? "OpenAI"
+                            : provider === "anthropic"
+                              ? "Anthropic"
+                              : "Local"}
+                        </span>
                         <span className="metrics-provider-count">{count}</span>
                       </div>
                     ))}
@@ -148,19 +149,22 @@ export function MetricsPanel({ onClose, currentMetrics }: MetricsPanelProps) {
               <div className="metrics-section">
                 <div className="metrics-section-title">Recent Sessions</div>
                 <div className="metrics-session-list">
-                  {history.slice(-10).reverse().map((session) => (
-                    <div key={session.sessionId} className="metrics-session-row">
-                      <span className="metrics-session-id">
-                        {session.sessionId.replace("session-", "").slice(0, 13)}
-                      </span>
-                      <div className="metrics-session-stats">
-                        <span>✓ {session.commandsSucceeded}</span>
-                        <span>✗ {session.commandsFailed}</span>
-                        <span>🎯 {session.goalsCompleted}</span>
-                        <span>{formatDuration(session.totalDuration)}</span>
+                  {history
+                    .slice(-10)
+                    .reverse()
+                    .map((session) => (
+                      <div key={session.sessionId} className="metrics-session-row">
+                        <span className="metrics-session-id">
+                          {session.sessionId.replace("session-", "").slice(0, 13)}
+                        </span>
+                        <div className="metrics-session-stats">
+                          <span>✓ {session.commandsSucceeded}</span>
+                          <span>✗ {session.commandsFailed}</span>
+                          <span>🎯 {session.goalsCompleted}</span>
+                          <span>{formatDuration(session.totalDuration)}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </div>
             </>

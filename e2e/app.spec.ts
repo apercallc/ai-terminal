@@ -15,7 +15,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe("AI Terminal App", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("http://localhost:1420");
+    await page.goto("http://localhost:1420/");
     // Wait for React to mount
     await page.waitForSelector(".app", { timeout: 10_000 });
   });
@@ -31,9 +31,9 @@ test.describe("AI Terminal App", () => {
   });
 
   test("renders goal input", async ({ page }) => {
-    const input = page.locator(".goal-input input");
+    const input = page.locator("input.goal-input");
     await expect(input).toBeVisible();
-    await expect(input).toHaveAttribute("placeholder", /describe your goal/i);
+    await expect(input).toHaveAttribute("placeholder", /enter a goal/i);
   });
 
   test("renders status bar", async ({ page }) => {
@@ -67,16 +67,14 @@ test.describe("AI Terminal App", () => {
   });
 
   test("opens settings panel", async ({ page }) => {
-    const settingsBtn = page.locator(".status-settings");
-    await settingsBtn.click();
+    await page.getByRole("button", { name: "Settings" }).click();
 
     const settingsPanel = page.locator(".settings-panel");
     await expect(settingsPanel).toBeVisible();
   });
 
   test("closes settings panel", async ({ page }) => {
-    const settingsBtn = page.locator(".status-settings");
-    await settingsBtn.click();
+    await page.getByRole("button", { name: "Settings" }).click();
 
     const closeBtn = page.locator(".settings-close");
     await closeBtn.click();
@@ -86,16 +84,14 @@ test.describe("AI Terminal App", () => {
   });
 
   test("opens history panel", async ({ page }) => {
-    const historyBtn = page.locator(".status-history");
-    await historyBtn.click();
+    await page.getByRole("button", { name: "View history" }).click();
 
     const historyPanel = page.locator(".history-panel");
     await expect(historyPanel).toBeVisible();
   });
 
   test("history shows empty state initially", async ({ page }) => {
-    const historyBtn = page.locator(".status-history");
-    await historyBtn.click();
+    await page.getByRole("button", { name: "View history" }).click();
 
     const empty = page.locator(".history-empty");
     await expect(empty).toHaveText(/no commands executed/i);
@@ -103,21 +99,19 @@ test.describe("AI Terminal App", () => {
 
   test("goal input is disabled while agent is not idle", async ({ page }) => {
     // In initial state, input should be enabled
-    const input = page.locator(".goal-input input");
+    const input = page.locator("input.goal-input");
     await expect(input).toBeEnabled();
   });
 
   test("settings has provider selection", async ({ page }) => {
-    const settingsBtn = page.locator(".status-settings");
-    await settingsBtn.click();
+    await page.getByRole("button", { name: "Settings" }).click();
 
     const providerSelect = page.locator(".settings-panel select").first();
     await expect(providerSelect).toBeVisible();
   });
 
   test("settings has mode selection", async ({ page }) => {
-    const settingsBtn = page.locator(".status-settings");
-    await settingsBtn.click();
+    await page.getByRole("button", { name: "Settings" }).click();
 
     const safeMode = page.locator("text=Safe Mode");
     const autoMode = page.locator("text=Auto-Accept Mode");

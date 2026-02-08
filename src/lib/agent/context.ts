@@ -118,19 +118,13 @@ export class AgentContext {
   /** Estimate the total tokens in the current context. */
   estimateTotalTokens(): number {
     const systemTokens = estimateTokens(this.getSystemPrompt());
-    const messageTokens = this.messages.reduce(
-      (sum, m) => sum + estimateTokens(m.content),
-      0,
-    );
+    const messageTokens = this.messages.reduce((sum, m) => sum + estimateTokens(m.content), 0);
     return systemTokens + messageTokens;
   }
 
   /** Drop oldest non-system messages if we exceed the budget. */
   private pruneIfNeeded(): void {
-    while (
-      this.messages.length > 2 &&
-      this.estimateTotalTokens() > MAX_CONTEXT_TOKENS
-    ) {
+    while (this.messages.length > 2 && this.estimateTotalTokens() > MAX_CONTEXT_TOKENS) {
       this.messages.shift();
     }
   }

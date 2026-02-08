@@ -9,7 +9,11 @@ describe("AnthropicProvider", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    provider = new AnthropicProvider("sk-ant-test-key", "claude-sonnet-4-20250514", "https://api.anthropic.com");
+    provider = new AnthropicProvider(
+      "sk-ant-test-key",
+      "claude-sonnet-4-20250514",
+      "https://api.anthropic.com",
+    );
   });
 
   it("has correct name", () => {

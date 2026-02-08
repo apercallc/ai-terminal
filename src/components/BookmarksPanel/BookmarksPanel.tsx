@@ -77,10 +77,7 @@ export function BookmarksPanel({ onClose, onExecute }: BookmarksPanelProps) {
         <div className="bookmarks-header">
           <h2>Bookmarks</h2>
           <div className="bookmarks-header-actions">
-            <button
-              className="text-btn"
-              onClick={() => setShowAddForm(!showAddForm)}
-            >
+            <button className="text-btn" onClick={() => setShowAddForm(!showAddForm)}>
               + Add
             </button>
             <button className="text-btn" onClick={handleExport}>
@@ -88,7 +85,10 @@ export function BookmarksPanel({ onClose, onExecute }: BookmarksPanelProps) {
             </button>
             <button className="settings-close" onClick={onClose} aria-label="Close">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path fillRule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
+                <path
+                  fillRule="evenodd"
+                  d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"
+                />
               </svg>
             </button>
           </div>
@@ -215,13 +215,13 @@ function BookmarkItem({
         <div className="bookmark-header">
           <span className="bookmark-name">{bookmark.name}</span>
           {bookmark.tags.map((tag) => (
-            <span key={tag} className="bookmark-tag">{tag}</span>
+            <span key={tag} className="bookmark-tag">
+              {tag}
+            </span>
           ))}
         </div>
         <code className="bookmark-command">{bookmark.command}</code>
-        {bookmark.description && (
-          <p className="bookmark-desc">{bookmark.description}</p>
-        )}
+        {bookmark.description && <p className="bookmark-desc">{bookmark.description}</p>}
       </div>
       <div className="bookmark-actions">
         <button className="bookmark-run" onClick={onExecute} title="Execute command">

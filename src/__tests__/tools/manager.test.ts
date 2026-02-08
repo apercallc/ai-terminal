@@ -80,7 +80,9 @@ describe("ToolManager", () => {
         command: "echo {{msg}}",
         icon: "",
         category: "custom",
-        variables: [{ name: "msg", label: "Message", type: "text" as const, defaultValue: "hello" }],
+        variables: [
+          { name: "msg", label: "Message", type: "text" as const, defaultValue: "hello" },
+        ],
       });
       const tool = manager.getAll().find((t) => t.name === "Echo Test");
       expect(tool).toBeDefined();

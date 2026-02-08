@@ -6,8 +6,20 @@ const mockPlan: CommandPlan = {
   goal: "test goal",
   summary: "test summary",
   steps: [
-    { id: "s1", command: "echo hi", description: "say hi", riskLevel: "safe", expectedOutcome: "hi" },
-    { id: "s2", command: "echo done", description: "done", riskLevel: "low", expectedOutcome: "done" },
+    {
+      id: "s1",
+      command: "echo hi",
+      description: "say hi",
+      riskLevel: "safe",
+      expectedOutcome: "hi",
+    },
+    {
+      id: "s2",
+      command: "echo done",
+      description: "done",
+      riskLevel: "low",
+      expectedOutcome: "done",
+    },
   ],
 };
 

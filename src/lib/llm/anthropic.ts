@@ -49,9 +49,7 @@ export class AnthropicProvider implements LLMProvider {
       throw new Error(`Anthropic API error: ${json.error.message}`);
     }
 
-    const textBlock = json.content?.find(
-      (b: { type: string }) => b.type === "text",
-    );
+    const textBlock = json.content?.find((b: { type: string }) => b.type === "text");
 
     return {
       content: textBlock?.text ?? "",
@@ -66,10 +64,7 @@ export class AnthropicProvider implements LLMProvider {
     };
   }
 
-  async stream(
-    request: LLMRequest,
-    onChunk: (chunk: StreamChunk) => void,
-  ): Promise<LLMResponse> {
+  async stream(request: LLMRequest, onChunk: (chunk: StreamChunk) => void): Promise<LLMResponse> {
     const { systemMessage, userMessages } = this.splitMessages(request);
 
     const url = `${this.baseUrl}/v1/messages`;
@@ -103,7 +98,8 @@ export class AnthropicProvider implements LLMProvider {
     const decoder = new TextDecoder();
     let buffer = "";
 
-    while (true) {
+    let shouldStop = false;
+    while (!shouldStop) {
       const { done, value } = await reader.read();
       if (done) break;
 
@@ -128,12 +124,21 @@ export class AnthropicProvider implements LLMProvider {
             }
 
             if (event.type === "message_stop") {
+              shouldStop = true;
               break;
             }
           } catch {
             // Skip malformed JSON
           }
         }
+      }
+    }
+
+    if (shouldStop) {
+      try {
+        await reader.cancel();
+      } catch {
+        // Ignore cancellation errors
       }
     }
 

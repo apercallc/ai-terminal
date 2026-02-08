@@ -89,9 +89,7 @@ describe("RecordingPlayer", () => {
       name: "Test",
       startTime: Date.now(),
       endTime: Date.now() + 5000,
-      events: [
-        { type: "output" as const, data: "hello", timestamp: Date.now() },
-      ],
+      events: [{ type: "output" as const, data: "hello", timestamp: Date.now() }],
       metadata: { shell: "zsh", cols: 80, rows: 24, cwd: "~" },
     };
     const player = new RecordingPlayer(recording);

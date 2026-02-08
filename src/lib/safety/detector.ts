@@ -12,32 +12,76 @@ interface DangerPattern {
 
 const DANGER_PATTERNS: DangerPattern[] = [
   // Critical — system-destroying
-  { pattern: /\brm\s+(-rf?|--recursive)\s+\/(?:\s|$)/, riskLevel: "critical", reason: "Recursive deletion of root filesystem" },
+  {
+    pattern: /\brm\s+(-rf?|--recursive)\s+\/(?:\s|$)/,
+    riskLevel: "critical",
+    reason: "Recursive deletion of root filesystem",
+  },
   { pattern: /\bmkfs\b/, riskLevel: "critical", reason: "Formatting a filesystem" },
-  { pattern: /\bdd\b.*\bof=\/dev\//, riskLevel: "critical", reason: "Writing directly to a device" },
+  {
+    pattern: /\bdd\b.*\bof=\/dev\//,
+    riskLevel: "critical",
+    reason: "Writing directly to a device",
+  },
   { pattern: />\s*\/dev\/sda/, riskLevel: "critical", reason: "Overwriting disk device" },
   { pattern: /:(){ :|:& };:/, riskLevel: "critical", reason: "Fork bomb detected" },
 
   // High — destructive or privilege-escalating
-  { pattern: /\brm\s+(-rf?|--recursive)\s+~/, riskLevel: "high", reason: "Recursive deletion in home directory" },
-  { pattern: /\brm\s+(-rf?|--recursive)\s+\*/, riskLevel: "high", reason: "Recursive wildcard deletion" },
-  { pattern: /\bchmod\s+(-R\s+)?777\b/, riskLevel: "high", reason: "Setting world-writable permissions" },
-  { pattern: /\bchown\s+-R\s+root\b/, riskLevel: "high", reason: "Changing ownership to root recursively" },
-  { pattern: /\bcurl\b.*\|\s*(sudo\s+)?(ba)?sh\b/, riskLevel: "high", reason: "Piping remote script to shell" },
-  { pattern: /\bwget\b.*\|\s*(sudo\s+)?(ba)?sh\b/, riskLevel: "high", reason: "Piping remote script to shell" },
+  {
+    pattern: /\brm\s+(-rf?|--recursive)\s+~/,
+    riskLevel: "high",
+    reason: "Recursive deletion in home directory",
+  },
+  {
+    pattern: /\brm\s+(-rf?|--recursive)\s+\*/,
+    riskLevel: "high",
+    reason: "Recursive wildcard deletion",
+  },
+  {
+    pattern: /\bchmod\s+(-R\s+)?777\b/,
+    riskLevel: "high",
+    reason: "Setting world-writable permissions",
+  },
+  {
+    pattern: /\bchown\s+-R\s+root\b/,
+    riskLevel: "high",
+    reason: "Changing ownership to root recursively",
+  },
+  {
+    pattern: /\bcurl\b.*\|\s*(sudo\s+)?(ba)?sh\b/,
+    riskLevel: "high",
+    reason: "Piping remote script to shell",
+  },
+  {
+    pattern: /\bwget\b.*\|\s*(sudo\s+)?(ba)?sh\b/,
+    riskLevel: "high",
+    reason: "Piping remote script to shell",
+  },
   { pattern: /\bsudo\s+rm\b/, riskLevel: "high", reason: "Deleting files as root" },
   { pattern: /\bsudo\s+.*\s+--force\b/, riskLevel: "high", reason: "Forced operation as root" },
   { pattern: /\bkillall\b/, riskLevel: "high", reason: "Killing all processes by name" },
-  { pattern: /\bsystemctl\s+(stop|disable|mask)\b/, riskLevel: "high", reason: "Stopping or disabling system services" },
+  {
+    pattern: /\bsystemctl\s+(stop|disable|mask)\b/,
+    riskLevel: "high",
+    reason: "Stopping or disabling system services",
+  },
   { pattern: /\blaunchctl\s+unload\b/, riskLevel: "high", reason: "Unloading system services" },
 
   // Medium — modifying system state
   { pattern: /\bsudo\b/, riskLevel: "medium", reason: "Running with elevated privileges" },
   { pattern: /\brm\s+-r\b/, riskLevel: "medium", reason: "Recursive file deletion" },
   { pattern: /\brm\s+/, riskLevel: "medium", reason: "Deleting files" },
-  { pattern: /\bnpm\s+install\s+-g\b/, riskLevel: "medium", reason: "Global npm package installation" },
+  {
+    pattern: /\bnpm\s+install\s+-g\b/,
+    riskLevel: "medium",
+    reason: "Global npm package installation",
+  },
   { pattern: /\bbrew\s+install\b/, riskLevel: "medium", reason: "Installing a Homebrew package" },
-  { pattern: /\bapt\s+(install|remove)\b/, riskLevel: "medium", reason: "System package modification" },
+  {
+    pattern: /\bapt\s+(install|remove)\b/,
+    riskLevel: "medium",
+    reason: "System package modification",
+  },
   { pattern: /\bpip\s+install\b/, riskLevel: "medium", reason: "Installing Python packages" },
   { pattern: /\bchmod\b/, riskLevel: "medium", reason: "Changing file permissions" },
   { pattern: /\bchown\b/, riskLevel: "medium", reason: "Changing file ownership" },
@@ -106,12 +150,18 @@ export function analyzeCommand(command: string): {
  */
 export function getRiskColor(level: RiskLevel): string {
   switch (level) {
-    case "safe": return "#3fb950";
-    case "low": return "#58a6ff";
-    case "medium": return "#d29922";
-    case "high": return "#f85149";
-    case "critical": return "#ff0000";
-    default: return "#8b949e";
+    case "safe":
+      return "#3fb950";
+    case "low":
+      return "#58a6ff";
+    case "medium":
+      return "#d29922";
+    case "high":
+      return "#f85149";
+    case "critical":
+      return "#ff0000";
+    default:
+      return "#8b949e";
   }
 }
 
@@ -120,11 +170,17 @@ export function getRiskColor(level: RiskLevel): string {
  */
 export function getRiskLabel(level: RiskLevel): string {
   switch (level) {
-    case "safe": return "Safe";
-    case "low": return "Low Risk";
-    case "medium": return "Medium Risk";
-    case "high": return "High Risk";
-    case "critical": return "Critical";
-    default: return "Unknown";
+    case "safe":
+      return "Safe";
+    case "low":
+      return "Low Risk";
+    case "medium":
+      return "Medium Risk";
+    case "high":
+      return "High Risk";
+    case "critical":
+      return "Critical";
+    default:
+      return "Unknown";
   }
 }

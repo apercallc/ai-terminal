@@ -22,9 +22,7 @@ export function GlobalPalette({ onClose, actions }: GlobalPaletteProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const filtered = query
-    ? actions.filter((a) =>
-        a.label.toLowerCase().includes(query.toLowerCase()),
-      )
+    ? actions.filter((a) => a.label.toLowerCase().includes(query.toLowerCase()))
     : actions;
 
   useEffect(() => {
@@ -103,9 +101,7 @@ export function GlobalPalette({ onClose, actions }: GlobalPaletteProps) {
               <span className="global-palette-item-icon">{action.icon}</span>
               <span className="global-palette-item-label">{action.label}</span>
               {action.shortcut && (
-                <span className="global-palette-item-shortcut">
-                  {action.shortcut}
-                </span>
+                <span className="global-palette-item-shortcut">{action.shortcut}</span>
               )}
             </div>
           ))}

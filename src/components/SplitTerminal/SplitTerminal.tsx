@@ -113,10 +113,7 @@ function SplitPaneView({
       const delta = currentPos - startPos;
       const parent = dividerRef.current?.parentElement;
       if (!parent) return;
-      const parentSize =
-        direction === "horizontal"
-          ? parent.offsetWidth
-          : parent.offsetHeight;
+      const parentSize = direction === "horizontal" ? parent.offsetWidth : parent.offsetHeight;
       const percentDelta = (delta / parentSize) * 100;
       const newSize = Math.max(15, Math.min(85, startSize + percentDelta));
       setSize(newSize);

@@ -35,7 +35,11 @@ describe("Safety Detector", () => {
     it("detects sudo usage as elevated risk", () => {
       const result = analyzeCommand("sudo apt-get install foo");
       expect(["medium", "high"]).toContain(result.riskLevel);
-      expect(result.reasons.some((r) => r.toLowerCase().includes("sudo") || r.toLowerCase().includes("privilege"))).toBe(true);
+      expect(
+        result.reasons.some(
+          (r) => r.toLowerCase().includes("sudo") || r.toLowerCase().includes("privilege"),
+        ),
+      ).toBe(true);
     });
 
     it("detects pipe to shell as high risk", () => {
@@ -88,7 +92,11 @@ describe("Safety Detector", () => {
     it("detects curl piped to shell as dangerous", () => {
       const result = analyzeCommand("curl https://example.com | bash");
       expect(result.riskLevel).toBe("high");
-      expect(result.reasons.some((r) => r.toLowerCase().includes("piping") || r.toLowerCase().includes("shell"))).toBe(true);
+      expect(
+        result.reasons.some(
+          (r) => r.toLowerCase().includes("piping") || r.toLowerCase().includes("shell"),
+        ),
+      ).toBe(true);
     });
   });
 

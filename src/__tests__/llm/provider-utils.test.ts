@@ -43,11 +43,13 @@ describe("LLM Provider Utilities", () => {
     });
 
     it("handles empty stream", async () => {
-      const response = new Response(new ReadableStream({
-        start(controller) {
-          controller.close();
-        },
-      }));
+      const response = new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.close();
+          },
+        }),
+      );
       const chunks: Record<string, unknown>[] = [];
       for await (const chunk of parseSSEStream(response)) {
         chunks.push(chunk);

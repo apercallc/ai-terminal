@@ -8,10 +8,7 @@ interface CommandPaletteProps {
   onClose?: () => void;
 }
 
-export function CommandPalette({
-  suggestions,
-  onSelect,
-}: CommandPaletteProps) {
+export function CommandPalette({ suggestions, onSelect }: CommandPaletteProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Reset selection when suggestions change
@@ -74,9 +71,13 @@ function PaletteItem({
 
 function getIcon(icon?: "folder" | "file" | "command"): string {
   switch (icon) {
-    case "folder": return "📁";
-    case "file": return "📄";
-    case "command": return "›";
-    default: return "›";
+    case "folder":
+      return "📁";
+    case "file":
+      return "📄";
+    case "command":
+      return "›";
+    default:
+      return "›";
   }
 }

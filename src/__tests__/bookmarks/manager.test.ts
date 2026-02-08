@@ -34,8 +34,18 @@ describe("BookmarkManager", () => {
 
   describe("search", () => {
     it("searches bookmarks by query", () => {
-      manager.add({ command: "git status", name: "Git Status", description: "Check repo", tags: ["git"] });
-      manager.add({ command: "npm test", name: "Run tests", description: "test suite", tags: ["npm"] });
+      manager.add({
+        command: "git status",
+        name: "Git Status",
+        description: "Check repo",
+        tags: ["git"],
+      });
+      manager.add({
+        command: "npm test",
+        name: "Run tests",
+        description: "test suite",
+        tags: ["npm"],
+      });
       const results = manager.search("git");
       expect(results.length).toBe(1);
       expect(results[0].command).toBe("git status");

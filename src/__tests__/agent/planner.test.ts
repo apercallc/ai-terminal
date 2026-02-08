@@ -92,9 +92,7 @@ describe("AgentPlanner", () => {
     const provider = createMockProvider(emptyPlan);
     const planner = new AgentPlanner(provider, context);
 
-    await expect(planner.createPlan("Do something")).rejects.toThrow(
-      "Plan has no steps",
-    );
+    await expect(planner.createPlan("Do something")).rejects.toThrow("Plan has no steps");
   });
 
   it("analyzes an error and suggests a fix", async () => {
@@ -113,11 +111,7 @@ describe("AgentPlanner", () => {
     const planner = new AgentPlanner(provider, context);
 
     const step = makeStep();
-    const result = await planner.analyzeError(
-      step,
-      "EACCES permission denied",
-      1,
-    );
+    const result = await planner.analyzeError(step, "EACCES permission denied", 1);
 
     expect(result.cause).toBe("Permission denied");
     expect(result.fixCommand).toContain("sudo");
