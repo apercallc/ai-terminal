@@ -130,7 +130,7 @@ Each file is named `YYYY-MM-DD.jsonl` and contains one JSON entry per line:
 
 If none of the above resolves your issue:
 
-1. Check the [GitHub Issues](https://github.com/yourusername/terminal-ill/issues)
+1. Check the [GitHub Issues](https://github.com/apercallc/ai-terminal/issues)
 2. Open a new issue with:
    - macOS version
    - App version

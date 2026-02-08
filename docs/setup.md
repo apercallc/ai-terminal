@@ -14,7 +14,7 @@
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/<your-org-or-username>/ai-terminal.git
+git clone https://github.com/apercallc/ai-terminal.git
 cd ai-terminal
 ```
 

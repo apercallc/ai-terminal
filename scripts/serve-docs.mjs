@@ -34,6 +34,8 @@ function contentTypeFor(filePath) {
   switch (ext) {
     case ".html":
       return "text/html; charset=utf-8";
+    case ".md":
+      return "text/markdown; charset=utf-8";
     case ".css":
       return "text/css; charset=utf-8";
     case ".js":
@@ -76,6 +78,48 @@ async function sendFile(res, filePath) {
   res.end(body);
 }
 
+function sendText(res, body, contentType) {
+  res.statusCode = 200;
+  res.setHeader("Content-Type", contentType);
+  res.setHeader("Cache-Control", "public, max-age=300");
+  res.end(body);
+}
+
+function getRequestOrigin(req) {
+  const configured = process.env.SITE_URL;
+  if (configured && configured.startsWith("http")) {
+    return configured.replace(/\/$/, "");
+  }
+
+  const host = req.headers.host ?? "localhost";
+  const forwardedProtoRaw = req.headers["x-forwarded-proto"];
+  const forwardedProto = Array.isArray(forwardedProtoRaw)
+    ? forwardedProtoRaw[0]
+    : forwardedProtoRaw;
+  const proto = (forwardedProto ?? "http").split(",")[0].trim();
+  return `${proto}://${host}`;
+}
+
+function buildSitemapXml(origin) {
+  const urls = [
+    { path: "/", changefreq: "weekly", priority: 1.0 },
+    { path: "/privacy/", changefreq: "yearly", priority: 0.3 },
+    { path: "/terms/", changefreq: "yearly", priority: 0.3 },
+    { path: "/setup.md", changefreq: "monthly", priority: 0.4 },
+    { path: "/troubleshooting.md", changefreq: "monthly", priority: 0.4 },
+    { path: "/architecture.md", changefreq: "monthly", priority: 0.2 },
+  ];
+
+  const now = new Date().toISOString();
+  const body = urls
+    .map(
+      (u) => `  <url>\n    <loc>${origin}${u.path}</loc>\n    <lastmod>${now}</lastmod>\n    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority.toFixed(1)}</priority>\n  </url>`,
+    )
+    .join("\n");
+
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`;
+}
+
 function redirect(res, location) {
   res.statusCode = 302;
   res.setHeader("Location", location);
@@ -88,6 +132,22 @@ const server = http.createServer(async (req, res) => {
 
     const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
     const pathname = url.pathname;
+
+    if (pathname === "/robots.txt") {
+      const origin = getRequestOrigin(req);
+      sendText(
+        res,
+        [`User-agent: *`, `Allow: /`, `Sitemap: ${origin}/sitemap.xml`, ``].join("\n"),
+        "text/plain; charset=utf-8",
+      );
+      return;
+    }
+
+    if (pathname === "/sitemap.xml") {
+      const origin = getRequestOrigin(req);
+      sendText(res, buildSitemapXml(origin), "application/xml; charset=utf-8");
+      return;
+    }
 
     // Stable download URL while keeping hrefs pinned to /downloads/ai-terminal-macos.dmg
     if (pathname === "/downloads/ai-terminal-macos.dmg") {
