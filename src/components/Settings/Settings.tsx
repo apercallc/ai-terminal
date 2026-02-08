@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import type { AppSettings, ExecutionMode, ProviderType } from "@/types";
 import "./Settings.css";
 
@@ -52,6 +53,66 @@ export function Settings({
 }: SettingsProps) {
   const [showApiKey, setShowApiKey] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
+  const [removeLocalData, setRemoveLocalData] = useState(true);
+  const [uninstallStatus, setUninstallStatus] = useState<string | null>(null);
+  const [isUninstalling, setIsUninstalling] = useState(false);
+
+  const UNINSTALL_FEEDBACK_URL = "https://apercallc.com/uninstall-feedback";
+
+  const clearLocalAppData = async (): Promise<void> => {
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith("ai_terminal_")) keysToRemove.push(k);
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    } catch {
+      // ignore
+    }
+
+    try {
+      await Promise.all([
+        invoke("delete_api_key", { provider: "openai" }),
+        invoke("delete_api_key", { provider: "anthropic" }),
+        invoke("delete_api_key", { provider: "local" }),
+      ]);
+    } catch {
+      // ignore
+    }
+  };
+
+  const openExternalUrl = async (url: string): Promise<void> => {
+    try {
+      const mod = await import("@tauri-apps/plugin-shell");
+      await mod.open(url);
+      return;
+    } catch {
+      // Fall back to browser open (works for web builds)
+    }
+
+    try {
+      window.open(url, "_blank", "noreferrer");
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleUninstall = async (): Promise<void> => {
+    setUninstallStatus(null);
+    setIsUninstalling(true);
+    try {
+      if (removeLocalData) await clearLocalAppData();
+      await openExternalUrl(UNINSTALL_FEEDBACK_URL);
+      setUninstallStatus(
+        "Opened uninstall feedback page. To uninstall, quit the app and move ‘AI Terminal’ to Trash."
+      );
+    } catch {
+      setUninstallStatus("Could not open the feedback page.");
+    } finally {
+      setIsUninstalling(false);
+    }
+  };
 
   const handleProviderChange = (type: ProviderType) => {
     onUpdateProvider({
@@ -288,6 +349,35 @@ export function Settings({
                   onUpdateSettings({ scrollbackLimit: parseInt(e.target.value, 10) || 10000 })
                 }
               />
+            </div>
+          </section>
+
+          {/* Uninstall */}
+          <section className="settings-section">
+            <h3>Uninstall</h3>
+            <div className="settings-field">
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={removeLocalData}
+                  onChange={(e) => setRemoveLocalData(e.target.checked)}
+                />
+                <span>Remove local app data (settings, history, etc.)</span>
+              </label>
+              <div className="help-text">
+                API keys are stored in Keychain; selecting this will attempt to delete saved keys too.
+              </div>
+            </div>
+            <div className="settings-field">
+              <button
+                className="settings-btn settings-btn-danger"
+                onClick={handleUninstall}
+                disabled={isLoading || isUninstalling}
+                type="button"
+              >
+                {isUninstalling ? "Opening…" : "Uninstall / Give Feedback"}
+              </button>
+              {uninstallStatus && <div className="help-text">{uninstallStatus}</div>}
             </div>
           </section>
         </div>

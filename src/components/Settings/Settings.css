@@ -198,6 +198,31 @@
   cursor: not-allowed;
 }
 
+.settings-btn-danger {
+  background: var(--danger);
+}
+
+.settings-btn-danger:hover:not(:disabled) {
+  opacity: 0.95;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.checkbox-row input {
+  width: auto;
+}
+
+.help-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
 .test-result {
   display: block;
   font-size: 12px;

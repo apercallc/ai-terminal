@@ -4,8 +4,7 @@ AI-powered macOS terminal app that can run commands for you, troubleshoot errors
 
 ## Download
 
-- Latest release: https://github.com/apercallc/ai-terminal/releases/latest
-- All releases: https://github.com/apercallc/ai-terminal/releases
+- Download (GitHub Releases): https://github.com/apercallc/ai-terminal/releases
 
 Download the `.dmg` from the latest release and install the app normally.
 
