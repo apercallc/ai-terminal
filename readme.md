@@ -1,204 +1,99 @@
-Perfect — here’s a simple, straight-forward, complete README.md.
-No buzzwords. No fluff. Clear purpose. Clear install. Clear behavior.
-
-This is written like a real open-source project someone can actually build.
-
-You can paste this directly into your repo:
-
-⸻
-
-
 # AI Terminal for macOS
 
-An AI-powered macOS terminal app that can **run commands for you**, troubleshoot errors, and complete setup tasks automatically.
+AI-powered macOS terminal app that can run commands for you, troubleshoot errors, and complete setup tasks automatically.
 
-Think Warp + autonomous AI.
+## Download
 
-The assistant can:
+- Latest release: https://github.com/apercallc/ai-terminal/releases/latest
+- All releases: https://github.com/apercallc/ai-terminal/releases
 
-- Execute shell commands
-- Install tools (Node, Docker, Python, etc.)
-- Read terminal output
-- Fix errors
-- Retry failed steps
-- Run in auto mode or approval mode
+Download the `.dmg` from the latest release and install the app normally.
 
-Packaged as a native macOS `.dmg`.
-
----
+Note: On first launch, macOS Gatekeeper may block the app. If that happens, open **System Settings → Privacy & Security** and allow it.
 
 ## Features
 
-- Native macOS app
-- Built-in terminal
-- AI can execute commands
-- Auto troubleshooting
-- Auto-retry on failures
-- Safe mode (confirm commands)
-- Auto-accept mode (fully autonomous)
-- Supports OpenAI, Anthropic, and local LLMs (LM Studio)
-
----
+- Native macOS app (Tauri)
+- Built-in terminal UI
+- AI-assisted command execution and troubleshooting
+- Safe mode (approval) and auto-accept mode
+- Supports OpenAI, Anthropic, and local OpenAI-compatible servers
 
 ## Supported Providers
 
 ### OpenAI
 
-Enter your API key:
-
-sk-xxxx
-
----
+Provide an API key that starts with `sk-...`.
 
 ### Anthropic
 
-Enter your API key:
+Provide an API key that starts with `sk-ant-...`.
 
-sk-ant-xxxx
+### Local (LM Studio / Ollama / any OpenAI-compatible server)
 
----
+Example settings:
 
-### Local LLM (LM Studio / Ollama / OpenAI-compatible)
-
-Example:
-
-Base URL: http://127.0.0.1:1234/v1
-API Key: anything
-Model: qwen2.5-7b-instruct
-
-Local servers usually ignore API keys.
-
----
+- Base URL: `http://127.0.0.1:1234/v1`
+- API Key: anything (many local servers ignore this)
+- Model: `qwen2.5-7b-instruct`
 
 ## How It Works
 
-1. User gives a goal (example: “install node”)
-2. AI generates shell commands
-3. Commands are executed
-4. Output is analyzed
-5. Errors are fixed automatically
-6. Process repeats until complete
-
----
+1. You provide a goal (example: “install node”)
+2. The agent proposes commands
+3. Commands run in the integrated terminal
+4. Output is analyzed; errors are fixed; steps are retried until complete
 
 ## Modes
 
-### Safe Mode (default)
+- Safe Mode (default): shows each command and asks for approval
+- Auto-Accept Mode: runs commands immediately (enable in Settings)
 
-- Shows every command
-- Requires user approval
+## Development
 
----
-
-### Auto-Accept Mode
-
-- Runs commands immediately
-- No confirmation
-- Fully autonomous
-
-Enable in Settings.
-
----
-
-## Tech Stack (recommended)
-
-- Tauri
-- React
-- xterm.js
-- Rust PTY
-- OpenAI-compatible API
-- macOS Keychain
-
----
-
-## Project Structure
-
-ai-terminal/
-├─ src/            # UI
-├─ src-tauri/     # Native backend
-├─ terminal/      # xterm.js
-├─ agent/         # AI planner
-├─ executor/      # Command runner
-├─ llm/           # Providers
-└─ keychain/      # Secure storage
-
----
-
-## Development Setup
-
-### Install dependencies
+### Install
 
 ```bash
-npm install
+npm ci
+```
 
+### Run (Tauri dev)
 
-⸻
-
-Run locally
-
+```bash
 npm run tauri dev
+```
 
+### Build (Tauri)
 
-⸻
-
-Build macOS DMG
-
+```bash
 npm run tauri build
+```
 
-Output:
+Build output (macOS): `src-tauri/target/release/bundle/dmg/`
 
-src-tauri/target/release/bundle/dmg/
+## Publishing a Release (GitHub Actions)
 
+This repo publishes public release downloads via GitHub Releases.
 
-⸻
+1. Update versions (keep these in sync):
+   - `package.json` version
+   - `src-tauri/tauri.conf.json` version
+   - `src-tauri/Cargo.toml` version
+2. Create and push a tag that starts with `v`:
 
-Using LM Studio (Local AI)
-	1.	Start LM Studio server
+```bash
+git tag v1.0.1
+git push origin v1.0.1
+```
 
-http://127.0.0.1:1234
+That triggers the GitHub Actions workflow and uploads the `.dmg` to the GitHub Release page.
 
-	2.	In app settings:
+## Security Notes
 
-Provider: Local
-Base URL: http://127.0.0.1:1234/v1
-Model: qwen2.5-7b-instruct
+- API keys are stored in macOS Keychain
+- Auto-accept is optional
+- This app can execute real shell commands; use responsibly
 
-
-⸻
-
-Security
-	•	API keys stored in macOS Keychain
-	•	Commands logged
-	•	Auto-Accept is optional
-	•	No silent background execution
-
-⸻
-
-Example
-
-User:
-
-install node
-
-AI:
-	•	installs Homebrew (if missing)
-	•	installs Node
-	•	fixes PATH
-	•	verifies version
-	•	confirms success
-
-No copy/paste.
-
-⸻
-
-Disclaimer
-
-This application executes real shell commands.
-
-Use Auto-Accept mode responsibly.
-
-⸻
-
-License
+## License
 
 MIT
