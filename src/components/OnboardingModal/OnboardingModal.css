@@ -1,0 +1,82 @@
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 210;
+  animation: fadeIn 0.15s ease;
+}
+
+.onboarding-modal {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 520px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.onboarding-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.onboarding-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.onboarding-body {
+  padding: 16px 20px;
+}
+
+.onboarding-body p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.onboarding-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.onboarding-btn {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.btn-skip {
+  background: var(--surface-3);
+  color: var(--text-secondary);
+}
+
+.btn-skip:hover {
+  background: var(--surface-2);
+}
+
+.btn-setup {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-setup:hover {
+  filter: brightness(1.05);
+}

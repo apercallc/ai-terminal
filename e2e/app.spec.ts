@@ -18,6 +18,12 @@ test.describe("AI Terminal App", () => {
     await page.goto("http://localhost:1420/");
     // Wait for React to mount
     await page.waitForSelector(".app", { timeout: 10_000 });
+
+    // If onboarding is shown (first run), skip it for UI smoke tests.
+    const skipBtn = page.getByRole("button", { name: "Skip for now" });
+    if (await skipBtn.isVisible().catch(() => false)) {
+      await skipBtn.click();
+    }
   });
 
   test("renders the app shell", async ({ page }) => {
@@ -33,7 +39,9 @@ test.describe("AI Terminal App", () => {
   test("renders goal input", async ({ page }) => {
     const input = page.locator("input.goal-input");
     await expect(input).toBeVisible();
-    await expect(input).toHaveAttribute("placeholder", /enter a goal/i);
+
+    const placeholder = (await input.getAttribute("placeholder")) || "";
+    expect(placeholder.toLowerCase()).toMatch(/enter a goal|ai disabled/);
   });
 
   test("renders status bar", async ({ page }) => {
@@ -97,10 +105,16 @@ test.describe("AI Terminal App", () => {
     await expect(empty).toHaveText(/no commands executed/i);
   });
 
-  test("goal input is disabled while agent is not idle", async ({ page }) => {
-    // In initial state, input should be enabled
+  test("goal input reflects AI enablement", async ({ page }) => {
     const input = page.locator("input.goal-input");
-    await expect(input).toBeEnabled();
+    await expect(input).toBeVisible();
+
+    const placeholder = (await input.getAttribute("placeholder")) || "";
+    if (placeholder.toLowerCase().includes("ai disabled")) {
+      await expect(input).toBeDisabled();
+    } else {
+      await expect(input).toBeEnabled();
+    }
   });
 
   test("settings has provider selection", async ({ page }) => {

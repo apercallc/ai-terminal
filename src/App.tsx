@@ -10,6 +10,7 @@ import { StatusBar } from "@/components/StatusBar/StatusBar";
 import { ThemeToggle } from "@/components/ThemeToggle/ThemeToggle";
 import { Settings } from "@/components/Settings/Settings";
 import { ApprovalModal } from "@/components/ApprovalModal/ApprovalModal";
+import { OnboardingModal } from "@/components/OnboardingModal/OnboardingModal";
 import { HistoryView } from "@/components/HistoryView/HistoryView";
 import { TabBar } from "@/components/TabBar/TabBar";
 import { TemplatesPanel } from "@/components/TemplatesPanel/TemplatesPanel";
@@ -53,7 +54,14 @@ export default function App() {
     connectionStatus,
     validationErrors,
     isLoading: settingsLoading,
+    hasLoadedApiKey,
   } = useSettings();
+
+  const ONBOARDING_STORAGE_KEY = "ai_terminal_onboarding_skipped_v1";
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingSkipped, setOnboardingSkipped] = useState(() =>
+    localStorage.getItem(ONBOARDING_STORAGE_KEY) === "1",
+  );
 
   // Tab management
   const [tabs, setTabs] = useState<TerminalTab[]>(() => {
@@ -135,6 +143,20 @@ export default function App() {
   const currentStepIndex = snapshot.currentStepIndex;
   const totalSteps = snapshot.plan?.steps.length ?? 0;
   const planSummary = snapshot.plan?.summary ?? "";
+
+  const aiEnabled = settings.provider.type === "local" || Boolean(settings.provider.apiKey);
+
+  // Show onboarding once after install unless the user skips.
+  useEffect(() => {
+    if (!hasLoadedApiKey) return;
+
+    if (onboardingSkipped) return;
+
+    const needsKey = !aiEnabled;
+    if (needsKey) {
+      setShowOnboarding(true);
+    }
+  }, [hasLoadedApiKey, onboardingSkipped, aiEnabled]);
 
   // Plugin manager (must be before effects that use it)
   const pluginManager = useMemo(() => getPluginManager(), []);
@@ -300,9 +322,7 @@ export default function App() {
     if (!activePtyId) return;
     let cancelled = false;
 
-    let invokeFn:
-      | (<T>(cmd: string, args?: Record<string, unknown>) => Promise<T>)
-      | null = null;
+    let invokeFn: (<T>(cmd: string, args?: Record<string, unknown>) => Promise<T>) | null = null;
     const poll = async () => {
       try {
         if (!invokeFn) {
@@ -340,8 +360,9 @@ export default function App() {
     async (goal: string) => {
       if (!activePtyId) return;
 
-      if (settings.provider.type !== "local" && !settings.provider.apiKey) {
-        setShowSettings(true);
+      if (!aiEnabled) {
+        // If the user explicitly skipped onboarding, keep behaving like a normal terminal.
+        if (!onboardingSkipped) setShowSettings(true);
         return;
       }
 
@@ -351,7 +372,7 @@ export default function App() {
 
       await executeGoal(finalGoal);
     },
-    [activePtyId, settings.provider, executeGoal, pluginManager],
+    [activePtyId, aiEnabled, onboardingSkipped, executeGoal, pluginManager],
   );
 
   const handleExportHistory = useCallback(() => {
@@ -556,7 +577,17 @@ export default function App() {
           onSubmit={handleGoalSubmit}
           onCancel={cancel}
           agentState={agentState}
-          disabled={isActive}
+          disabled={isActive || (onboardingSkipped && !aiEnabled)}
+          placeholderOverride={
+            onboardingSkipped && !aiEnabled ? "AI disabled — add an API key in Settings to enable" : undefined
+          }
+          onEnableAi={
+            onboardingSkipped && !aiEnabled
+              ? () => {
+                  setShowSettings(true);
+                }
+              : undefined
+          }
           ptySessionId={activePtyId}
         />
       </div>
@@ -598,6 +629,20 @@ export default function App() {
           validationErrors={validationErrors}
           isLoading={settingsLoading}
           onClose={() => setShowSettings(false)}
+        />
+      )}
+
+      {showOnboarding && (
+        <OnboardingModal
+          onSkip={() => {
+            localStorage.setItem(ONBOARDING_STORAGE_KEY, "1");
+            setOnboardingSkipped(true);
+            setShowOnboarding(false);
+          }}
+          onSetup={() => {
+            setShowOnboarding(false);
+            setShowSettings(true);
+          }}
         />
       )}
 

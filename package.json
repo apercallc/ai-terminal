@@ -9,6 +9,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "start": "node ./scripts/serve-docs.mjs",
+    "site:serve": "node ./scripts/serve-docs.mjs",
     "tauri": "tauri",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -23,6 +25,9 @@
     "version:patch": "npm version patch --no-git-tag-version",
     "version:minor": "npm version minor --no-git-tag-version",
     "version:major": "npm version major --no-git-tag-version"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.2.0",

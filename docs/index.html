@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Terminal — AI for macOS Terminal</title>
+    <meta
+      name="description"
+      content="AI Terminal for macOS: run AI directly from your terminal. Your models. Your keys. Full control."
+    />
+    <meta name="theme-color" content="#0b1220" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: [
+                "ui-sans-serif",
+                "system-ui",
+                "-apple-system",
+                "BlinkMacSystemFont",
+                "SF Pro Display",
+                "SF Pro Text",
+                "Segoe UI",
+                "Roboto",
+                "Helvetica Neue",
+                "Arial",
+                "Noto Sans",
+                "Apple Color Emoji",
+                "Segoe UI Emoji",
+              ],
+              mono: [
+                "ui-monospace",
+                "SFMono-Regular",
+                "SF Mono",
+                "Menlo",
+                "Monaco",
+                "Consolas",
+                "Liberation Mono",
+                "Courier New",
+                "monospace",
+              ],
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      :root {
+        color-scheme: light;
+      }
+    </style>
+  </head>
+  <body class="bg-white text-slate-900 antialiased">
+    <!-- Top banner -->
+    <div class="w-full border-b border-slate-200 bg-slate-50">
+      <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-2 text-sm">
+        <div class="text-slate-700">
+          <span class="font-semibold">Platform:</span> Currently macOS only.
+          <span class="hidden sm:inline"> Windows 10/11 planned.</span>
+        </div>
+        <a
+          href="#pricing"
+          class="text-slate-700 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-500"
+        >
+          Free — bring your own keys
+        </a>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur">
+      <nav class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+        <a href="/" class="flex items-center gap-2">
+          <span
+            class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white"
+            aria-hidden="true"
+          >
+            <span class="font-mono text-sm text-slate-900">$</span>
+          </span>
+          <span class="text-sm font-semibold tracking-tight">AI Terminal</span>
+        </a>
+
+        <div class="hidden items-center gap-6 text-sm text-slate-700 md:flex">
+          <a href="#features" class="hover:text-slate-900">Features</a>
+          <a href="#integrations" class="hover:text-slate-900">Works With</a>
+          <a href="#how" class="hover:text-slate-900">Get Started</a>
+          <a href="#pricing" class="hover:text-slate-900">Pricing</a>
+          <a href="#faq" class="hover:text-slate-900">FAQ</a>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <a
+            href="./setup.md"
+            class="hidden rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 md:inline-flex"
+          >
+            View Docs
+          </a>
+          <a
+            href="/downloads/ai-terminal-macos.dmg"
+            class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+          >
+            Download for macOS
+          </a>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Hero -->
+    <main>
+      <section class="mx-auto max-w-6xl px-4 pb-10 pt-10 sm:pb-16 sm:pt-14">
+        <div class="grid items-center gap-10 lg:grid-cols-2">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              AI Terminal for macOS
+            </p>
+            <h1 class="mt-3 text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
+              Run AI directly from your terminal.
+              <span class="text-slate-600"> Your models. Your keys. Full control.</span>
+            </h1>
+            <p class="mt-4 max-w-xl text-lg text-slate-600">
+              AI Terminal lets you turn goals into safe, reviewable command plans — and execute them on
+              your machine. Use OpenAI, Anthropic, or a local LLM (like LM Studio) with your own
+              credentials.
+            </p>
+
+            <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+              <a
+                href="/downloads/ai-terminal-macos.dmg"
+                class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+              >
+                Download for macOS
+              </a>
+              <a
+                href="./setup.md"
+                class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50"
+              >
+                View Docs
+              </a>
+            </div>
+
+            <div class="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-600">
+              <div class="inline-flex items-center gap-2">
+                <span class="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true"></span>
+                Free to use — bring your own AI resources
+              </div>
+              <div class="inline-flex items-center gap-2">
+                <span class="h-2 w-2 rounded-full bg-slate-300" aria-hidden="true"></span>
+                macOS only (Windows 10/11 planned)
+              </div>
+            </div>
+          </div>
+
+          <!-- Mock preview card -->
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="h-3 w-3 rounded-full bg-red-400"></span>
+                <span class="h-3 w-3 rounded-full bg-yellow-400"></span>
+                <span class="h-3 w-3 rounded-full bg-green-400"></span>
+              </div>
+              <span class="text-xs text-slate-500">AI Terminal • Preview</span>
+            </div>
+            <div class="mt-4 rounded-xl border border-slate-200 bg-slate-950 p-4 font-mono text-[12px] leading-5 text-slate-100">
+              <div class="text-slate-400">$</div>
+              <div class="mt-1">
+                <span class="text-slate-100">Goal:</span>
+                <span class="text-slate-300">
+                  Set up Node.js 20 and fix my project build
+                </span>
+              </div>
+              <div class="mt-3 text-slate-400">Plan</div>
+              <ul class="mt-1 list-disc space-y-1 pl-5 text-slate-200">
+                <li>Check existing Node version and PATH</li>
+                <li>Install Node 20 via a safe method</li>
+                <li>Run tests + build, then summarize results</li>
+              </ul>
+              <div class="mt-3 text-slate-400">Execution</div>
+              <div class="mt-1 text-slate-200">Waiting for approval…</div>
+            </div>
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p class="text-xs font-semibold text-slate-700">Safety-first</p>
+                <p class="mt-1 text-sm text-slate-600">Approve each command before it runs.</p>
+              </div>
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p class="text-xs font-semibold text-slate-700">Bring your provider</p>
+                <p class="mt-1 text-sm text-slate-600">OpenAI, Anthropic, or local LLMs.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features -->
+      <section id="features" class="border-t border-slate-200 bg-white">
+        <div class="mx-auto max-w-6xl px-4 py-14">
+          <div class="max-w-2xl">
+            <h2 class="text-2xl font-semibold tracking-tight">Everything you need to safely ship from the terminal</h2>
+            <p class="mt-2 text-slate-600">
+              Designed for real work: fast iteration, clear approvals, and a setup that respects your
+              environment.
+            </p>
+          </div>
+
+          <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="rounded-2xl border border-slate-200 bg-white p-5">
+              <p class="text-sm font-semibold">Terminal control</p>
+              <p class="mt-2 text-sm text-slate-600">
+                Convert goals into concrete shell commands with readable explanations and expected
+                outcomes.
+              </p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-5">
+              <p class="text-sm font-semibold">Local LLM support</p>
+              <p class="mt-2 text-sm text-slate-600">
+                Use local models through OpenAI-compatible endpoints (LM Studio or your own server).
+              </p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-5">
+              <p class="text-sm font-semibold">Auto-accept mode</p>
+              <p class="mt-2 text-sm text-slate-600">
+                When you trust the plan, let it run. Switch back to review mode anytime.
+              </p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-5">
+              <p class="text-sm font-semibold">Key management</p>
+              <p class="mt-2 text-sm text-slate-600">
+                API keys are stored locally (macOS Keychain) — never in the browser storage.
+              </p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-5">
+              <p class="text-sm font-semibold">Troubleshooting assistant</p>
+              <p class="mt-2 text-sm text-slate-600">
+                Paste errors, inspect output, and get step-by-step fixes tailored to your environment.
+              </p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-5">
+              <p class="text-sm font-semibold">Secure local execution</p>
+              <p class="mt-2 text-sm text-slate-600">
+                Commands run on your machine. You stay in control of what executes and when.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Integrations -->
+      <section id="integrations" class="border-t border-slate-200 bg-slate-50">
+        <div class="mx-auto max-w-6xl px-4 py-14">
+          <div class="max-w-2xl">
+            <h2 class="text-2xl font-semibold tracking-tight">Works with your setup</h2>
+            <p class="mt-2 text-slate-600">
+              Plug in the AI provider you already use — or keep everything local.
+            </p>
+          </div>
+
+          <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-2xl border border-slate-200 bg-white p-5">
+              <p class="text-sm font-semibold">OpenAI</p>
+              <p class="mt-2 text-sm text-slate-600">Use your OpenAI API key and model selection.</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-5">
+              <p class="text-sm font-semibold">Anthropic</p>
+              <p class="mt-2 text-sm text-slate-600">Bring your Claude key for high-quality reasoning.</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-5">
+              <p class="text-sm font-semibold">LM Studio</p>
+              <p class="mt-2 text-sm text-slate-600">Run models locally via an OpenAI-compatible server.</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-5">
+              <p class="text-sm font-semibold">Local servers</p>
+              <p class="mt-2 text-sm text-slate-600">Point to your own endpoint on 127.0.0.1.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- How it works -->
+      <section id="how" class="border-t border-slate-200 bg-white">
+        <div class="mx-auto max-w-6xl px-4 py-14">
+          <div class="max-w-2xl">
+            <h2 class="text-2xl font-semibold tracking-tight">Get started in minutes</h2>
+            <p class="mt-2 text-slate-600">Three simple steps to go from install → AI-powered execution.</p>
+          </div>
+
+          <div class="mt-10 grid gap-4 md:grid-cols-3">
+            <div class="rounded-2xl border border-slate-200 bg-white p-6">
+              <div class="flex items-center gap-3">
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">1</span>
+                <p class="text-sm font-semibold">Download & open</p>
+              </div>
+              <p class="mt-3 text-sm text-slate-600">
+                Install AI Terminal on macOS and launch it like a normal terminal.
+              </p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-6">
+              <div class="flex items-center gap-3">
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">2</span>
+                <p class="text-sm font-semibold">Add your provider</p>
+              </div>
+              <p class="mt-3 text-sm text-slate-600">
+                Choose OpenAI, Anthropic, or Local LLM and store your key securely in Keychain.
+              </p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-6">
+              <div class="flex items-center gap-3">
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">3</span>
+                <p class="text-sm font-semibold">Run a goal</p>
+              </div>
+              <p class="mt-3 text-sm text-slate-600">
+                Describe what you want ("fix my build", "set up ssh", "install node") and approve the plan.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Benefits -->
+      <section class="border-t border-slate-200 bg-slate-50">
+        <div class="mx-auto max-w-6xl px-4 py-14">
+          <div class="grid gap-10 lg:grid-cols-2 lg:items-center">
+            <div>
+              <h2 class="text-2xl font-semibold tracking-tight">Why developers choose AI Terminal</h2>
+              <p class="mt-2 text-slate-600">
+                A macOS-native terminal workflow that keeps you in control while reducing the time you
+                spend searching, copying commands, and re-running the same fixes.
+              </p>
+
+              <ul class="mt-6 space-y-3 text-sm text-slate-700">
+                <li class="flex gap-3">
+                  <span class="mt-1 h-2 w-2 flex-none rounded-full bg-slate-900" aria-hidden="true"></span>
+                  <span>Turn vague goals into clear, reviewable command plans.</span>
+                </li>
+                <li class="flex gap-3">
+                  <span class="mt-1 h-2 w-2 flex-none rounded-full bg-slate-900" aria-hidden="true"></span>
+                  <span>Keep API keys local and switch providers without lock-in.</span>
+                </li>
+                <li class="flex gap-3">
+                  <span class="mt-1 h-2 w-2 flex-none rounded-full bg-slate-900" aria-hidden="true"></span>
+                  <span>Stay productive with safe approvals and optional auto-accept mode.</span>
+                </li>
+                <li class="flex gap-3">
+                  <span class="mt-1 h-2 w-2 flex-none rounded-full bg-slate-900" aria-hidden="true"></span>
+                  <span>Keep execution on your machine — you control what runs.</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p class="text-xs font-semibold text-slate-700">BYO Providers</p>
+                  <p class="mt-2 text-sm text-slate-600">Use OpenAI, Anthropic, or local models.</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p class="text-xs font-semibold text-slate-700">Local-first</p>
+                  <p class="mt-2 text-sm text-slate-600">Commands execute on your machine.</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p class="text-xs font-semibold text-slate-700">Safe mode</p>
+                  <p class="mt-2 text-sm text-slate-600">Approve each command before it runs.</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p class="text-xs font-semibold text-slate-700">Fast setup</p>
+                  <p class="mt-2 text-sm text-slate-600">Download → add key → run goals.</p>
+                </div>
+              </div>
+
+              <div class="mt-5 rounded-xl border border-slate-200 bg-white p-4">
+                <p class="text-xs font-semibold text-slate-700">Windows roadmap</p>
+                <p class="mt-2 text-sm text-slate-600">
+                  Windows 10/11 support is planned. Join early on macOS today and keep your workflow
+                  consistent across environments.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pricing -->
+      <section id="pricing" class="border-t border-slate-200 bg-white">
+        <div class="mx-auto max-w-6xl px-4 py-14">
+          <div class="mx-auto max-w-2xl text-center">
+            <h2 class="text-2xl font-semibold tracking-tight">Simple, transparent pricing</h2>
+            <p class="mt-2 text-slate-600">Free to use — bring your own API keys or local models.</p>
+          </div>
+
+          <div class="mx-auto mt-10 max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="text-center">
+              <p class="text-sm font-semibold text-slate-700">Free</p>
+              <p class="mt-4 text-5xl font-semibold tracking-tight">$0</p>
+              <p class="mt-2 text-sm text-slate-600">No subscription. No hidden fees.</p>
+            </div>
+
+            <ul class="mt-6 space-y-3 text-sm text-slate-700">
+              <li class="flex items-start gap-3">
+                <span class="mt-1 h-2 w-2 flex-none rounded-full bg-emerald-600" aria-hidden="true"></span>
+                <span>Goal-to-plan command generation</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="mt-1 h-2 w-2 flex-none rounded-full bg-emerald-600" aria-hidden="true"></span>
+                <span>Safe approvals + optional auto-accept</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="mt-1 h-2 w-2 flex-none rounded-full bg-emerald-600" aria-hidden="true"></span>
+                <span>Works with OpenAI, Anthropic, and local LLMs</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="mt-1 h-2 w-2 flex-none rounded-full bg-emerald-600" aria-hidden="true"></span>
+                <span>Keys stay local (Keychain). You own your AI spend.</span>
+              </li>
+            </ul>
+
+            <a
+              href="/downloads/ai-terminal-macos.dmg"
+              class="mt-6 inline-flex w-full items-center justify-center rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+            >
+              Download for macOS
+            </a>
+
+            <p class="mt-3 text-center text-xs text-slate-500">
+              Free to use — users must provide their own AI resources.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section id="faq" class="border-t border-slate-200 bg-slate-50">
+        <div class="mx-auto max-w-6xl px-4 py-14">
+          <div class="mx-auto max-w-2xl text-center">
+            <h2 class="text-2xl font-semibold tracking-tight">Frequently asked questions</h2>
+            <p class="mt-2 text-slate-600">Quick answers about setup, privacy, and how AI Terminal works.</p>
+          </div>
+
+          <div class="mx-auto mt-10 max-w-3xl divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
+            <details class="group p-5">
+              <summary class="cursor-pointer list-none font-semibold text-slate-900">
+                Is AI Terminal really free?
+                <span class="float-right text-slate-400 group-open:rotate-180">⌄</span>
+              </summary>
+              <p class="mt-3 text-sm text-slate-600">
+                Yes. AI Terminal is free to use. You bring your own provider (OpenAI, Anthropic, or a
+                local server) and pay those providers directly if applicable.
+              </p>
+            </details>
+            <details class="group p-5">
+              <summary class="cursor-pointer list-none font-semibold text-slate-900">
+                Where are my API keys stored?
+                <span class="float-right text-slate-400 group-open:rotate-180">⌄</span>
+              </summary>
+              <p class="mt-3 text-sm text-slate-600">
+                API keys are stored locally in macOS Keychain. They are not saved in browser storage.
+              </p>
+            </details>
+            <details class="group p-5">
+              <summary class="cursor-pointer list-none font-semibold text-slate-900">
+                What happens if I skip onboarding?
+                <span class="float-right text-slate-400 group-open:rotate-180">⌄</span>
+              </summary>
+              <p class="mt-3 text-sm text-slate-600">
+                The app continues to work as a normal terminal. AI features stay disabled until you add
+                a provider in Settings.
+              </p>
+            </details>
+            <details class="group p-5">
+              <summary class="cursor-pointer list-none font-semibold text-slate-900">
+                Does AI Terminal run commands automatically?
+                <span class="float-right text-slate-400 group-open:rotate-180">⌄</span>
+              </summary>
+              <p class="mt-3 text-sm text-slate-600">
+                By default, AI Terminal runs in Safe Mode where you approve each command. You can enable
+                Auto-Accept Mode when appropriate.
+              </p>
+            </details>
+            <details class="group p-5">
+              <summary class="cursor-pointer list-none font-semibold text-slate-900">
+                Is Windows supported?
+                <span class="float-right text-slate-400 group-open:rotate-180">⌄</span>
+              </summary>
+              <p class="mt-3 text-sm text-slate-600">
+                Not yet. AI Terminal is currently macOS-only. Windows 10/11 is planned.
+              </p>
+            </details>
+          </div>
+
+          <div class="mx-auto mt-6 max-w-3xl text-center text-sm text-slate-600">
+            <a
+              href="/privacy/"
+              class="underline decoration-slate-300 underline-offset-4 hover:decoration-slate-500"
+            >
+              Privacy
+            </a>
+            <span class="mx-2 text-slate-300">•</span>
+            <a
+              href="/terms/"
+              class="underline decoration-slate-300 underline-offset-4 hover:decoration-slate-500"
+            >
+              Terms
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Final CTA -->
+      <section class="border-t border-slate-200 bg-slate-900">
+        <div class="mx-auto max-w-6xl px-4 py-14">
+          <div class="grid items-center gap-8 rounded-2xl bg-slate-900 lg:grid-cols-2">
+            <div>
+              <h2 class="text-2xl font-semibold tracking-tight text-white">
+                Start using AI in your terminal today
+              </h2>
+              <p class="mt-2 text-slate-300">
+                Download AI Terminal for macOS. Add your provider. Stay in control of what runs.
+              </p>
+            </div>
+            <div class="flex flex-col gap-3 sm:flex-row lg:justify-end">
+              <a
+                href="/downloads/ai-terminal-macos.dmg"
+                class="inline-flex items-center justify-center rounded-lg bg-white px-5 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-100"
+              >
+                Download for macOS
+              </a>
+              <a
+                href="./setup.md"
+                class="inline-flex items-center justify-center rounded-lg border border-white/20 bg-transparent px-5 py-3 text-sm font-semibold text-white hover:bg-white/10"
+              >
+                View Docs
+              </a>
+            </div>
+          </div>
+          <p class="mt-6 text-xs text-slate-400">
+            Windows 10/11 is planned. This download is for macOS only.
+          </p>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="bg-white">
+        <div class="mx-auto max-w-6xl px-4 py-10">
+          <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <p class="text-sm font-semibold">AI Terminal</p>
+              <p class="mt-2 text-sm text-slate-600">
+                Run AI directly from your terminal. Your models. Your keys. Full control.
+              </p>
+            </div>
+            <div>
+              <p class="text-sm font-semibold">Product</p>
+              <ul class="mt-2 space-y-2 text-sm text-slate-600">
+                <li><a class="hover:text-slate-900" href="#features">Features</a></li>
+                <li><a class="hover:text-slate-900" href="#pricing">Pricing</a></li>
+                <li><a class="hover:text-slate-900" href="#faq">FAQ</a></li>
+              </ul>
+            </div>
+            <div>
+              <p class="text-sm font-semibold">Legal</p>
+              <ul class="mt-2 space-y-2 text-sm text-slate-600">
+                <li><a class="hover:text-slate-900" href="/privacy/">Privacy</a></li>
+                <li><a class="hover:text-slate-900" href="/terms/">Terms</a></li>
+              </ul>
+            </div>
+            <div>
+              <p class="text-sm font-semibold">Contact</p>
+              <ul class="mt-2 space-y-2 text-sm text-slate-600">
+                <li>
+                  <a class="hover:text-slate-900" href="https://apercallc.com" target="_blank" rel="noreferrer">
+                    apercallc.com
+                  </a>
+                </li>
+                <li>
+                  <a class="hover:text-slate-900" href="mailto:support@apercallc.com">support@apercallc.com</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="mt-8 border-t border-slate-200 pt-6 text-xs text-slate-500">
+            <p>Product of Aperca LLC</p>
+          </div>
+        </div>
+      </footer>
+    </main>
+  </body>
+</html>

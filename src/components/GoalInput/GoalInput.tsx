@@ -11,6 +11,8 @@ interface GoalInputProps {
   agentState: AgentState;
   disabled: boolean;
   ptySessionId?: string | null;
+  placeholderOverride?: string;
+  onEnableAi?: () => void;
 }
 
 export function GoalInput({
@@ -19,6 +21,8 @@ export function GoalInput({
   agentState,
   disabled,
   ptySessionId: _ptySessionId,
+  placeholderOverride,
+  onEnableAi,
 }: GoalInputProps) {
   const [value, setValue] = useState("");
   const [suggestions, setSuggestions] = useState<CommandSuggestion[]>([]);
@@ -155,6 +159,7 @@ export function GoalInput({
   }, []);
 
   const isWorking = ["planning", "executing", "analyzing", "retrying"].includes(agentState);
+  const showEnableAi = Boolean(onEnableAi) && disabled && !isWorking && agentState === "idle";
 
   const placeholder = (() => {
     switch (agentState) {
@@ -169,7 +174,7 @@ export function GoalInput({
       case "awaiting_approval":
         return "Waiting for approval...";
       default:
-        return 'Enter a goal (e.g., "install node")';
+        return placeholderOverride || 'Enter a goal (e.g., "install node")';
     }
   })();
 
@@ -210,7 +215,19 @@ export function GoalInput({
           aria-label="Goal input"
           autoFocus
         />
-        <VoiceButton onTranscript={handleVoiceTranscript} />
+        <VoiceButton onTranscript={handleVoiceTranscript} disabled={disabled || isWorking} />
+
+        {showEnableAi && (
+          <button
+            type="button"
+            className="goal-link"
+            onClick={onEnableAi}
+            aria-label="Enable AI"
+          >
+            Enable AI
+          </button>
+        )}
+
         {isWorking ? (
           <button
             type="button"

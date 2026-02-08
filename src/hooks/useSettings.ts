@@ -19,6 +19,7 @@ interface UseSettingsReturn {
   validationErrors: string[];
   isLoading: boolean;
   connectionStatus: "untested" | "testing" | "connected" | "failed";
+  hasLoadedApiKey: boolean;
 }
 
 export function useSettings(): UseSettingsReturn {
@@ -38,6 +39,7 @@ export function useSettings(): UseSettingsReturn {
 
   const [provider, setProviderState] = useState<LLMProvider | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasLoadedApiKey, setHasLoadedApiKey] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<
     "untested" | "testing" | "connected" | "failed"
   >("untested");
@@ -78,7 +80,9 @@ export function useSettings(): UseSettingsReturn {
 
   // Load API key from keychain on mount
   useEffect(() => {
-    loadApiKeyFromKeychain(settings.provider.type);
+    loadApiKeyFromKeychain(settings.provider.type).finally(() => {
+      setHasLoadedApiKey(true);
+    });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadApiKeyFromKeychain = async (providerType: ProviderType) => {
@@ -177,5 +181,6 @@ export function useSettings(): UseSettingsReturn {
     validationErrors,
     isLoading,
     connectionStatus,
+    hasLoadedApiKey,
   };
 }

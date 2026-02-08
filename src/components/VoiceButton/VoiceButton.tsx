@@ -4,14 +4,16 @@ import "./VoiceButton.css";
 
 interface VoiceButtonProps {
   onTranscript: (text: string) => void;
+  disabled?: boolean;
 }
 
-export function VoiceButton({ onTranscript }: VoiceButtonProps) {
+export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const handleToggle = useCallback(() => {
+    if (disabled) return;
     const manager = getVoiceInputManager();
 
     if (listening) {
@@ -48,13 +50,14 @@ export function VoiceButton({ onTranscript }: VoiceButtonProps) {
     });
     manager.start();
     setListening(true);
-  }, [listening, onTranscript]);
+  }, [disabled, listening, onTranscript]);
 
   return (
     <div className="voice-button-wrapper">
       <button
         className={`voice-button ${listening ? "active" : ""}`}
         onClick={handleToggle}
+        disabled={disabled}
         title={listening ? "Stop listening" : "Voice input"}
         aria-label={listening ? "Stop voice input" : "Start voice input"}
       >
