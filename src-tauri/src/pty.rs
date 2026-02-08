@@ -160,11 +160,7 @@ pub fn spawn_shell(
 
 /// Write data to a PTY session.
 #[tauri::command]
-pub fn write_to_pty(
-    app: AppHandle,
-    session_id: String,
-    data: String,
-) -> Result<(), String> {
+pub fn write_to_pty(app: AppHandle, session_id: String, data: String) -> Result<(), String> {
     let state = app.state::<PtyManager>();
     let sessions = state.sessions.lock();
     let session = sessions
@@ -186,12 +182,7 @@ pub fn write_to_pty(
 
 /// Resize a PTY session.
 #[tauri::command]
-pub fn resize_pty(
-    app: AppHandle,
-    session_id: String,
-    rows: u16,
-    cols: u16,
-) -> Result<(), String> {
+pub fn resize_pty(app: AppHandle, session_id: String, rows: u16, cols: u16) -> Result<(), String> {
     let state = app.state::<PtyManager>();
     let sessions = state.sessions.lock();
     let session = sessions
@@ -316,8 +307,7 @@ pub fn list_directory(path: String) -> Result<serde_json::Value, String> {
     use std::path::Path;
 
     let target = if path.starts_with('~') {
-        let home = dirs::home_dir()
-            .ok_or_else(|| "Cannot resolve home directory".to_string())?;
+        let home = dirs::home_dir().ok_or_else(|| "Cannot resolve home directory".to_string())?;
         home.join(&path[1..].trim_start_matches('/'))
     } else {
         Path::new(&path).to_path_buf()
