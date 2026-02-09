@@ -1,10 +1,9 @@
 {
-  "$schema": "https://raw.githubusercontent.com/nicegui/nicegui/main/.vscode/tauri-capability.schema.json",
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-cli/schema/capability.schema.json",
   "identifier": "default",
   "description": "Default capabilities for the AI Terminal app",
   "windows": ["main"],
   "permissions": [
-    "core:default",
-    "shell:allow-open"
+    "core:default"
   ]
 }
