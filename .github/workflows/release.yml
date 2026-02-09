@@ -9,12 +9,44 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   NODE_VERSION: "20"
 
 jobs:
+  verify:
+    name: Verify (Node)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: TypeScript type check
+        run: npm run typecheck
+
+      - name: Prettier check
+        run: npx prettier --check "src/**/*.{ts,tsx,css}"
+
+      - name: Run tests
+        run: npm test
+
   release:
     name: Build & Release
+    needs: [verify]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,9 +67,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Run tests
-        run: npm test
 
       - name: Build and create release
         uses: tauri-apps/tauri-action@v0

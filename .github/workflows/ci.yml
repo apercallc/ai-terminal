@@ -6,14 +6,18 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
   NODE_VERSION: "20"
 
 jobs:
-  lint-and-typecheck:
-    name: Lint & Type Check
-    runs-on: macos-latest
+  node-checks:
+    name: Node Checks
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -30,25 +34,10 @@ jobs:
         run: npm run lint
 
       - name: TypeScript type check
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
       - name: Prettier check
         run: npx prettier --check "src/**/*.{ts,tsx,css}"
-
-  unit-tests:
-    name: Unit Tests
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
 
       - name: Run unit tests
         run: npm run test:coverage
@@ -83,12 +72,9 @@ jobs:
       - name: Clippy
         run: cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 
-      - name: Build Rust
-        run: cargo build --manifest-path src-tauri/Cargo.toml
-
   build:
     name: Build App
-    needs: [lint-and-typecheck, unit-tests, rust-check]
+    needs: [node-checks, rust-check]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
