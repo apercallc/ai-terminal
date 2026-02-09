@@ -112,10 +112,33 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: "AI Terminal ${{ github.ref_name }}"
           releaseBody: |
+            > **Note:** This build is not notarized. On first launch, right-click the app → Open, then click Open in the dialog. See [Apple support](https://support.apple.com/en-us/102445) for details.
+
             See the [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
           releaseDraft: false
           prerelease: false
           tauriScript: npx tauri
+
+      - name: Ad-hoc codesign (unsigned fallback)
+        if: ${{ steps.tauri_signed.outcome != 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_PATH=$(ls -d src-tauri/target/release/bundle/macos/*.app 2>/dev/null | head -1)
+          if [[ -n "$APP_PATH" ]]; then
+            echo "Ad-hoc signing: $APP_PATH"
+            codesign --force --deep --sign - "$APP_PATH"
+            echo "Re-creating DMG with ad-hoc signed app..."
+            DMG_PATH=$(ls src-tauri/target/release/bundle/dmg/*.dmg 2>/dev/null | head -1)
+            if [[ -n "$DMG_PATH" ]]; then
+              DMG_NAME=$(basename "$DMG_PATH")
+              TEMP_DMG_DIR=$(mktemp -d)
+              hdiutil attach "$DMG_PATH" -mountpoint "$TEMP_DMG_DIR/mnt" -nobrowse -quiet
+              rm -rf "$TEMP_DMG_DIR/mnt/"*.app
+              cp -R "$APP_PATH" "$TEMP_DMG_DIR/mnt/"
+              hdiutil detach "$TEMP_DMG_DIR/mnt" -quiet
+            fi
+          fi
 
       - name: Generate SHA-256 checksums
         shell: bash
