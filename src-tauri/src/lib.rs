@@ -1,5 +1,6 @@
 mod keychain;
 mod logger;
+mod external;
 mod pty;
 
 use pty::PtyManager;
@@ -9,7 +10,6 @@ pub fn run() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_shell::init())
         .manage(PtyManager::new())
         .invoke_handler(tauri::generate_handler![
             // PTY commands
@@ -28,6 +28,8 @@ pub fn run() {
             logger::write_log,
             logger::get_log_entries,
             logger::get_log_dates,
+            // External actions
+            external::open_external_url,
         ])
         .run(tauri::generate_context!())
         .expect("error while running AI Terminal");

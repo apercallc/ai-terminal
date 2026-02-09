@@ -43,6 +43,16 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # macOS code signing + notarization (set these secrets in repo settings)
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # If/when enabling Tauri updater signatures
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "AI Terminal ${{ github.ref_name }}"
@@ -51,3 +61,27 @@ jobs:
           releaseDraft: false
           prerelease: false
           tauriScript: npx tauri
+
+      - name: Generate SHA-256 checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$GITHUB_WORKSPACE/checksums-sha256.txt"
+          : > "$OUT"
+
+          if ls src-tauri/target/release/bundle/dmg/*.dmg >/dev/null 2>&1; then
+            shasum -a 256 src-tauri/target/release/bundle/dmg/*.dmg >> "$OUT"
+          fi
+
+          if ls src-tauri/target/release/bundle/macos/*.app >/dev/null 2>&1; then
+            # Hash the app bundle deterministically by hashing file contents.
+            find src-tauri/target/release/bundle/macos/*.app -type f -print0 | sort -z | xargs -0 shasum -a 256 >> "$OUT"
+          fi
+
+          echo "\nChecksums written to: $OUT"
+
+      - name: Upload checksums to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.ref_name }}" "$GITHUB_WORKSPACE/checksums-sha256.txt" --clobber

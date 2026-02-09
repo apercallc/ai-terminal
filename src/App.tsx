@@ -59,8 +59,8 @@ export default function App() {
 
   const ONBOARDING_STORAGE_KEY = "ai_terminal_onboarding_skipped_v1";
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [onboardingSkipped, setOnboardingSkipped] = useState(() =>
-    localStorage.getItem(ONBOARDING_STORAGE_KEY) === "1",
+  const [onboardingSkipped, setOnboardingSkipped] = useState(
+    () => localStorage.getItem(ONBOARDING_STORAGE_KEY) === "1",
   );
 
   // Tab management
@@ -579,7 +579,9 @@ export default function App() {
           agentState={agentState}
           disabled={isActive || (onboardingSkipped && !aiEnabled)}
           placeholderOverride={
-            onboardingSkipped && !aiEnabled ? "AI disabled — add an API key in Settings to enable" : undefined
+            onboardingSkipped && !aiEnabled
+              ? "AI disabled — add an API key in Settings to enable"
+              : undefined
           }
           onEnableAi={
             onboardingSkipped && !aiEnabled

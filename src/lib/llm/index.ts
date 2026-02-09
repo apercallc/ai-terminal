@@ -48,7 +48,25 @@ export function validateProviderSettings(settings: ProviderSettings): string[] {
   }
 
   try {
-    new URL(settings.baseUrl);
+    const url = new URL(settings.baseUrl);
+
+    if (url.protocol !== "https:" && url.protocol !== "http:") {
+      errors.push("Base URL must be http(s)");
+    }
+
+    if (url.username || url.password) {
+      errors.push("Base URL must not include credentials");
+    }
+
+    if (settings.type !== "local") {
+      if (url.protocol !== "https:") {
+        errors.push("Cloud providers require https:// Base URL");
+      }
+      const host = url.hostname.toLowerCase();
+      if (host === "localhost" || host === "127.0.0.1" || host === "::1") {
+        errors.push("Cloud providers must not use localhost Base URL");
+      }
+    }
   } catch {
     errors.push("Base URL is not a valid URL");
   }

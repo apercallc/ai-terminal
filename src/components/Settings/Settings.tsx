@@ -51,6 +51,7 @@ export function Settings({
   isLoading,
   onClose,
 }: SettingsProps) {
+  const allowAutoMode = import.meta.env.DEV;
   const [showApiKey, setShowApiKey] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
   const [removeLocalData, setRemoveLocalData] = useState(true);
@@ -84,15 +85,14 @@ export function Settings({
 
   const openExternalUrl = async (url: string): Promise<void> => {
     try {
-      const mod = await import("@tauri-apps/plugin-shell");
-      await mod.open(url);
+      await invoke("open_external_url", { url });
       return;
     } catch {
       // Fall back to browser open (works for web builds)
     }
 
     try {
-      window.open(url, "_blank", "noreferrer");
+      window.open(url, "_blank", "noreferrer,noopener");
     } catch {
       // ignore
     }
@@ -105,7 +105,7 @@ export function Settings({
       if (removeLocalData) await clearLocalAppData();
       await openExternalUrl(UNINSTALL_FEEDBACK_URL);
       setUninstallStatus(
-        "Opened uninstall feedback page. To uninstall, quit the app and move ‘AI Terminal’ to Trash."
+        "Opened uninstall feedback page. To uninstall, quit the app and move ‘AI Terminal’ to Trash.",
       );
     } catch {
       setUninstallStatus("Could not open the feedback page.");
@@ -288,22 +288,24 @@ export function Settings({
                   <span className="mode-desc">Review and approve each command</span>
                 </div>
               </label>
-              <label className={`mode-option ${settings.mode === "auto" ? "active" : ""}`}>
-                <input
-                  type="radio"
-                  name="mode"
-                  value="auto"
-                  checked={settings.mode === "auto"}
-                  onChange={() => onUpdateSettings({ mode: "auto" as ExecutionMode })}
-                />
-                <div className="mode-content">
-                  <span className="mode-icon">⚡</span>
-                  <span className="mode-label">Auto-Accept Mode</span>
-                  <span className="mode-desc">Commands run automatically</span>
-                </div>
-              </label>
+              {allowAutoMode && (
+                <label className={`mode-option ${settings.mode === "auto" ? "active" : ""}`}>
+                  <input
+                    type="radio"
+                    name="mode"
+                    value="auto"
+                    checked={settings.mode === "auto"}
+                    onChange={() => onUpdateSettings({ mode: "auto" as ExecutionMode })}
+                  />
+                  <div className="mode-content">
+                    <span className="mode-icon">⚡</span>
+                    <span className="mode-label">Auto-Accept Mode</span>
+                    <span className="mode-desc">Commands run automatically</span>
+                  </div>
+                </label>
+              )}
             </div>
-            {settings.mode === "auto" && (
+            {allowAutoMode && settings.mode === "auto" && (
               <div className="mode-warning">
                 ⚠️ Auto mode executes commands without confirmation. Use responsibly.
               </div>
@@ -365,7 +367,8 @@ export function Settings({
                 <span>Remove local app data (settings, history, etc.)</span>
               </label>
               <div className="help-text">
-                API keys are stored in Keychain; selecting this will attempt to delete saved keys too.
+                API keys are stored in Keychain; selecting this will attempt to delete saved keys
+                too.
               </div>
             </div>
             <div className="settings-field">

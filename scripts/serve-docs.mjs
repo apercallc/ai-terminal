@@ -11,19 +11,63 @@ const docsRoot = path.join(repoRoot, "docs");
 
 const port = Number.parseInt(process.env.PORT ?? "3000", 10);
 
-function withSecurityHeaders(res) {
+// Very small in-memory rate limit (sufficient for a single-node deployment).
+// For multi-node production, enforce at the edge (CDN/WAF) instead.
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_GENERAL = 300; // requests/minute/ip
+const RATE_LIMIT_DOWNLOAD = 30; // downloads/minute/ip
+const rateState = new Map();
+
+function getClientIp(req) {
+  const fwd = req.headers["x-forwarded-for"];
+  const raw = Array.isArray(fwd) ? fwd[0] : fwd;
+  const ip = (raw ?? req.socket.remoteAddress ?? "").split(",")[0].trim();
+  return ip || "unknown";
+}
+
+function checkRateLimit(req, limit) {
+  const ip = getClientIp(req);
+  const now = Date.now();
+  const cur = rateState.get(ip);
+  if (!cur || now >= cur.resetAt) {
+    rateState.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { ok: true, remaining: limit - 1 };
+  }
+  if (cur.count >= limit) {
+    return { ok: false, remaining: 0, resetAt: cur.resetAt };
+  }
+  cur.count += 1;
+  return { ok: true, remaining: limit - cur.count };
+}
+
+function withSecurityHeaders(req, res) {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "no-referrer");
   res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+
+  const forwardedProtoRaw = req.headers["x-forwarded-proto"];
+  const forwardedProto = Array.isArray(forwardedProtoRaw)
+    ? forwardedProtoRaw[0]
+    : forwardedProtoRaw;
+  const proto = (forwardedProto ?? "http").split(",")[0].trim();
+  if (proto === "https") {
+    // HSTS must only be set over HTTPS.
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  }
   res.setHeader(
     "Content-Security-Policy",
     [
       "default-src 'self'",
+      "base-uri 'none'",
+      "object-src 'none'",
+      "frame-src 'none'",
       "img-src 'self' data:",
       "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com",
       "script-src 'self' https://cdn.tailwindcss.com",
       "connect-src 'self'",
-      "base-uri 'self'",
       "frame-ancestors 'none'",
     ].join("; "),
   );
@@ -126,9 +170,38 @@ function redirect(res, location) {
   res.end();
 }
 
+function parseHostAllowlist(raw) {
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function isAllowedDownloadUrl(urlStr) {
+  try {
+    const u = new URL(urlStr);
+    if (u.protocol !== "https:") return false;
+    const allow = parseHostAllowlist(process.env.AI_TERMINAL_DOWNLOAD_ALLOW_HOSTS);
+    if (allow.length === 0) return true;
+    return allow.includes(u.hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
 const server = http.createServer(async (req, res) => {
   try {
-    withSecurityHeaders(res);
+    // General request rate limiting.
+    const rl = checkRateLimit(req, RATE_LIMIT_GENERAL);
+    if (!rl.ok) {
+      res.statusCode = 429;
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      res.end("Too many requests");
+      return;
+    }
+
+    withSecurityHeaders(req, res);
 
     const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
     const pathname = url.pathname;
@@ -151,8 +224,22 @@ const server = http.createServer(async (req, res) => {
 
     // Stable download URL while keeping hrefs pinned to /downloads/ai-terminal-macos.dmg
     if (pathname === "/downloads/ai-terminal-macos.dmg") {
+      const dl = checkRateLimit(req, RATE_LIMIT_DOWNLOAD);
+      if (!dl.ok) {
+        res.statusCode = 429;
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        res.end("Too many download requests");
+        return;
+      }
+
       const configured = process.env.AI_TERMINAL_DMG_URL;
       if (configured && configured.startsWith("http")) {
+        if (!isAllowedDownloadUrl(configured)) {
+          res.statusCode = 500;
+          res.setHeader("Content-Type", "text/plain; charset=utf-8");
+          res.end("Download misconfigured. AI_TERMINAL_DMG_URL must be https:// and match allowlist.");
+          return;
+        }
         redirect(res, configured);
         return;
       }
@@ -162,6 +249,7 @@ const server = http.createServer(async (req, res) => {
       try {
         const st = await stat(localPath);
         if (st.isFile()) {
+          res.setHeader("Content-Disposition", "attachment; filename=ai-terminal-macos.dmg");
           await sendFile(res, localPath);
           return;
         }
@@ -174,6 +262,19 @@ const server = http.createServer(async (req, res) => {
       res.end(
         "Download not configured. Set AI_TERMINAL_DMG_URL or place docs/downloads/ai-terminal-macos.dmg",
       );
+      return;
+    }
+
+    // Optional checksum endpoint for manual verification.
+    if (pathname === "/downloads/ai-terminal-macos.dmg.sha256") {
+      const checksum = process.env.AI_TERMINAL_DMG_SHA256;
+      if (!checksum) {
+        res.statusCode = 404;
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        res.end("Checksum not configured");
+        return;
+      }
+      sendText(res, `${checksum}  ai-terminal-macos.dmg\n`, "text/plain; charset=utf-8");
       return;
     }
 

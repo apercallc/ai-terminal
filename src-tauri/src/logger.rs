@@ -73,6 +73,8 @@ pub fn write_log(
     output_preview: Option<String>,
     session_id: String,
 ) -> Result<(), String> {
+    let command = redact_secrets(&command);
+    let output_preview = output_preview.map(|s| redact_secrets(&s));
     let src = match source.as_str() {
         "ai" => LogSource::Ai,
         "system" => LogSource::System,
@@ -118,6 +120,86 @@ pub fn write_log(
     writeln!(file, "{}", json).map_err(|e| format!("Failed to write log entry: {}", e))?;
 
     Ok(())
+}
+
+fn redact_secrets(input: &str) -> String {
+    let mut out = input.to_string();
+
+    // Basic redactions (defense-in-depth; frontend should also redact).
+    // Authorization: Bearer <token>
+    loop {
+        let lower = out.to_ascii_lowercase();
+        let Some(pos) = lower.find("authorization: bearer ") else { break };
+        let start = pos + "authorization: bearer ".len();
+        let end = out[start..]
+            .find(|c: char| c.is_whitespace() || c == '"' || c == '\'' )
+            .map(|i| start + i)
+            .unwrap_or(out.len());
+        if end > start {
+            out.replace_range(start..end, "[REDACTED]");
+        } else {
+            break;
+        }
+    }
+
+    // Redact common API key prefixes.
+    for prefix in ["sk-ant-", "sk-"] {
+        let mut search_from = 0usize;
+        loop {
+            let hay = &out[search_from..];
+            let Some(rel) = hay.find(prefix) else { break };
+            let start = search_from + rel;
+            let mut end = start + prefix.len();
+            // Consume token-ish characters
+            for ch in out[end..].chars() {
+                if ch.is_ascii_alphanumeric() || ch == '-' || ch == '_' {
+                    end += ch.len_utf8();
+                } else {
+                    break;
+                }
+            }
+            // Only redact if it looks like a real token
+            if end - start >= prefix.len() + 8 {
+                out.replace_range(start..end, "[REDACTED]");
+                search_from = start + "[REDACTED]".len();
+            } else {
+                search_from = end;
+            }
+        }
+    }
+
+    // apiKey=... / api_key: ...
+    for needle in ["apiKey", "api_key", "apikey"] {
+        let mut idx = 0usize;
+        loop {
+            let lower = out.to_ascii_lowercase();
+            let Some(pos) = lower[idx..].find(&needle.to_ascii_lowercase()) else { break };
+            let start = idx + pos;
+            let after = start + needle.len();
+            // Look for separator
+            let sep = out[after..]
+                .find(|c: char| c == '=' || c == ':')
+                .map(|i| after + i);
+            let Some(sep_pos) = sep else {
+                idx = after;
+                continue;
+            };
+            let mut value_start = sep_pos + 1;
+            while value_start < out.len() && out.as_bytes()[value_start].is_ascii_whitespace() {
+                value_start += 1;
+            }
+            let value_end = out[value_start..]
+                .find(|c: char| c.is_whitespace() || c == '"' || c == '\'' )
+                .map(|i| value_start + i)
+                .unwrap_or(out.len());
+            if value_end > value_start {
+                out.replace_range(value_start..value_end, "[REDACTED]");
+            }
+            idx = value_start + "[REDACTED]".len();
+        }
+    }
+
+    out
 }
 
 /// Get log entries, optionally filtered by date and session.

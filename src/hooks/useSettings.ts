@@ -29,7 +29,12 @@ export function useSettings(): UseSettingsReturn {
       if (stored) {
         const parsed = JSON.parse(stored);
         // Merge with defaults to pick up any new fields
-        return { ...DEFAULT_SETTINGS, ...parsed };
+        const merged = { ...DEFAULT_SETTINGS, ...parsed };
+        // Production hardening: never allow auto-execution to persist.
+        if (import.meta.env.PROD && merged.mode === "auto") {
+          merged.mode = "safe";
+        }
+        return merged;
       }
     } catch {
       // Fall through to defaults

@@ -56,7 +56,7 @@ pub fn spawn_shell(
         })
         .map_err(|e| format!("Failed to open PTY: {}", e))?;
 
-    let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".to_string());
+    let shell = select_shell();
     let mut cmd = CommandBuilder::new(&shell);
     cmd.arg("--login");
 
@@ -156,6 +156,16 @@ pub fn spawn_shell(
 
     log::info!("Spawned PTY session: {} (PID: {})", session_id, child_id);
     Ok(session_id)
+}
+
+fn select_shell() -> String {
+    let fallback = "/bin/zsh".to_string();
+    let raw = std::env::var("SHELL").unwrap_or_else(|_| fallback.clone());
+    // Only allow known system shells to avoid executing an unexpected binary.
+    match raw.as_str() {
+        "/bin/zsh" | "/bin/bash" | "/bin/sh" => raw,
+        _ => fallback,
+    }
 }
 
 /// Write data to a PTY session.

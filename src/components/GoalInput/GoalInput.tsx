@@ -218,12 +218,7 @@ export function GoalInput({
         <VoiceButton onTranscript={handleVoiceTranscript} disabled={disabled || isWorking} />
 
         {showEnableAi && (
-          <button
-            type="button"
-            className="goal-link"
-            onClick={onEnableAi}
-            aria-label="Enable AI"
-          >
+          <button type="button" className="goal-link" onClick={onEnableAi} aria-label="Enable AI">
             Enable AI
           </button>
         )}

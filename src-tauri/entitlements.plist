@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!--
+    Hardened Runtime (Developer ID) typically works with an empty entitlements file.
+    Keep this minimal unless you *specifically* need an entitlement.
+
+    If you plan to distribute via the Mac App Store (sandbox required), you will
+    need a different entitlements set and should expect restrictions on spawning
+    shells / accessing arbitrary filesystem paths.
+  -->
+</dict>
+</plist>

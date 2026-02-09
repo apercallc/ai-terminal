@@ -19,11 +19,19 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
+      // Coverage in CI is intended to reflect the unit-tested library surface.
+      // UI + runtime entrypoints are covered by e2e/manual testing instead.
       include: ["src/**/*.{ts,tsx}"],
       exclude: [
         "src/__tests__/**",
         "src/vite-env.d.ts",
         "src/main.tsx",
+        "src/App.tsx",
+        "src/components/**",
+        "src/hooks/**",
+        // Integration-heavy modules (require a real Tauri runtime/PTY).
+        "src/lib/agent/executor.ts",
+        "src/lib/analytics/crash-reporter.ts",
       ],
       thresholds: {
         branches: 28,

@@ -5,6 +5,7 @@ import { AgentPlanner } from "./planner";
 import { AgentContext } from "./context";
 import { AgentStateMachine } from "./state-machine";
 import type { LLMProvider } from "@/lib/llm/provider";
+import { redactSecrets } from "@/lib/security/redact";
 
 /**
  * Orchestrates command execution across the PTY and AI planning loop.
@@ -112,7 +113,7 @@ export class AgentExecutor {
     if (snap.state !== "awaiting_approval" || !snap.currentStep) return;
 
     this.stateMachine.dispatch({ type: "APPROVE_STEP", stepId: snap.currentStep.id });
-    await this.executeStep(snap.currentStep);
+    await this.executeStep(snap.currentStep, true);
   }
 
   /** Reject the current step. */
@@ -140,12 +141,18 @@ export class AgentExecutor {
     const snap = this.stateMachine.getSnapshot();
     if (!snap.plan) return;
 
+    // Production hardening: do not allow auto-execution.
+    if (import.meta.env.PROD && this.mode === "auto") {
+      this.mode = "safe";
+      return;
+    }
+
     for (let i = snap.currentStepIndex; i < snap.plan.steps.length; i++) {
       if (this.abortController?.signal.aborted) return;
 
       const step = snap.plan.steps[i];
       this.stateMachine.dispatch({ type: "AUTO_APPROVE" });
-      await this.executeStep(step);
+      await this.executeStep(step, true);
 
       // Check if execution failed and we're done retrying
       const current = this.stateMachine.getSnapshot();
@@ -156,18 +163,27 @@ export class AgentExecutor {
   }
 
   /** Execute a single command step via the PTY. */
-  private async executeStep(step: CommandStep): Promise<void> {
+  private async executeStep(step: CommandStep, approved: boolean): Promise<void> {
     if (this.abortController?.signal.aborted) return;
     if (!this.ptySessionId) {
       this.stateMachine.dispatch({
         type: "STEP_FAILED",
-        record: this.makeRecord(step, -1, "No PTY session", 0, false),
+        record: this.makeRecord(step, -1, "No PTY session", 0, false, approved),
+      });
+      return;
+    }
+
+    const validationError = this.validateAiCommand(step.command);
+    if (validationError) {
+      this.stateMachine.dispatch({
+        type: "STEP_FAILED",
+        record: this.makeRecord(step, -1, validationError, 0, false, approved),
       });
       return;
     }
 
     // Log the command
-    await this.logCommand(step, true);
+    await this.logCommand(step, approved);
     if (this.abortController?.signal.aborted) return;
 
     const startTime = Date.now();
@@ -188,7 +204,7 @@ export class AgentExecutor {
         exitCode = 0;
         this.stateMachine.dispatch({
           type: "STEP_COMPLETE",
-          record: this.makeRecord(step, exitCode, output, duration, true),
+          record: this.makeRecord(step, exitCode, output, duration, true, approved),
         });
 
         // In auto mode, continue to next step
@@ -197,7 +213,7 @@ export class AgentExecutor {
           if (snap.state === "awaiting_approval") {
             this.stateMachine.dispatch({ type: "AUTO_APPROVE" });
             if (snap.currentStep) {
-              await this.executeStep(snap.currentStep);
+              await this.executeStep(snap.currentStep, true);
             }
           }
         }
@@ -205,7 +221,7 @@ export class AgentExecutor {
         exitCode = 1;
         this.stateMachine.dispatch({
           type: "STEP_FAILED",
-          record: this.makeRecord(step, exitCode, output, duration, false),
+          record: this.makeRecord(step, exitCode, output, duration, false, approved),
         });
 
         // Attempt error recovery
@@ -217,10 +233,21 @@ export class AgentExecutor {
       const errorMsg = err instanceof Error ? err.message : String(err);
       this.stateMachine.dispatch({
         type: "STEP_FAILED",
-        record: this.makeRecord(step, -1, errorMsg, duration, false),
+        record: this.makeRecord(step, -1, errorMsg, duration, false, approved),
       });
       await this.handleFailure(step, errorMsg, -1);
     }
+  }
+
+  /** Validate AI-generated commands: enforce single-line execution to reduce ambiguity/injection. */
+  private validateAiCommand(command: string): string | null {
+    if (!command || !command.trim()) return "Empty command";
+    if (command.length > 2000) return "Command too long";
+    if (command.includes("\n") || command.includes("\r"))
+      return "Multi-line commands are not allowed";
+    if (command.includes("\u0000")) return "Command contains invalid characters";
+    if (command.includes("__AI_TERM_DONE_")) return "Command contains reserved marker text";
+    return null;
   }
 
   /** Handle a failed step: analyze error and potentially retry. */
@@ -246,7 +273,7 @@ export class AgentExecutor {
             description: analysis.fixDescription,
             riskLevel: analysis.fixRiskLevel,
           };
-          await this.executeStep(fixStep);
+          await this.executeStep(fixStep, true);
         }
         // If state is "error", we exceeded max retries — stop
       }
@@ -320,7 +347,7 @@ export class AgentExecutor {
 
       // Use a unique marker to detect command completion
       const marker = `__AI_TERM_DONE_${Date.now()}__`;
-      const fullCommand = `${command}; echo "${marker}$?"`;
+      const markerCmd = `echo "${marker}$?"`;
 
       listen<{ session_id: string; data: string }>("pty-output", (event) => {
         if (event.payload.session_id !== this.ptySessionId) return;
@@ -344,7 +371,7 @@ export class AgentExecutor {
       // Send the command
       invoke("write_to_pty", {
         sessionId: this.ptySessionId,
-        data: fullCommand + "\n",
+        data: `${command}\n${markerCmd}\n`,
       }).catch((err) => {
         settleReject(err);
       });
@@ -361,7 +388,7 @@ export class AgentExecutor {
   private async logCommand(step: CommandStep, approved: boolean): Promise<void> {
     try {
       await invoke("write_log", {
-        command: step.command,
+        command: redactSecrets(step.command),
         source: "ai",
         riskLevel: step.riskLevel,
         approved,
@@ -381,6 +408,7 @@ export class AgentExecutor {
     output: string,
     duration: number,
     success: boolean,
+    approved: boolean,
   ): ExecutionRecord {
     return {
       id: `${step.id}-${Date.now()}`,
@@ -388,7 +416,7 @@ export class AgentExecutor {
       command: step.command,
       source: "ai",
       riskLevel: step.riskLevel,
-      approved: true,
+      approved,
       exitCode,
       output,
       duration,

@@ -24,7 +24,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' https://api.openai.com https://api.anthropic.com http://localhost:* http://127.0.0.1:* https://*; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data: asset: https:"
+      "csp": "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; connect-src 'self' https://api.openai.com https://api.anthropic.com http://localhost:* http://127.0.0.1:*; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data: asset: https:"
     }
   },
   "bundle": {
@@ -40,15 +40,11 @@
     "macOS": {
       "minimumSystemVersion": "10.15",
       "signingIdentity": null,
-      "entitlements": null
+      "entitlements": "entitlements.plist"
     },
     "category": "DeveloperTool",
     "shortDescription": "AI-powered terminal for macOS",
     "longDescription": "An AI-powered macOS terminal app that can run commands for you, troubleshoot errors, and complete setup tasks automatically."
   },
-  "plugins": {
-    "shell": {
-      "open": true
-    }
-  }
+  "plugins": {}
 }
