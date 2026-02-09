@@ -11,7 +11,7 @@ on:
         required: true
         type: string
       allow_unsigned:
-        description: "Allow publishing an unsigned/not-notarized release (NOT recommended)"
+        description: "Allow publishing a not-notarized release (NOT recommended)"
         required: false
         default: false
         type: boolean
@@ -60,10 +60,15 @@ jobs:
       - name: Run E2E smoke tests
         run: npm run test:e2e
 
-  release:
-    name: Build & Release
+  build_macos:
+    name: Build (macOS)
     needs: [verify]
     runs-on: macos-latest
+    outputs:
+      release_tag: ${{ steps.tag.outputs.release_tag }}
+      signing_available: ${{ steps.signing.outputs.available }}
+      build_signed_ok: ${{ steps.build_state.outputs.signed_ok }}
+      build_unsigned_ok: ${{ steps.build_state.outputs.unsigned_ok }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -87,6 +92,7 @@ jobs:
         run: npm ci
 
       - name: Resolve release tag
+        id: tag
         shell: bash
         run: |
           set -euo pipefail
@@ -108,6 +114,7 @@ jobs:
           fi
 
           echo "RELEASE_TAG=${TAG}" >> "$GITHUB_ENV"
+          echo "release_tag=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Require signing/notarization for production tags
         if: ${{ github.event_name == 'push' }}
@@ -126,7 +133,7 @@ jobs:
           if (( ${#missing[@]} > 0 )); then
             echo "ERROR: Missing required signing/notarization secrets for a production tag release:" >&2
             printf ' - %s\n' "${missing[@]}" >&2
-            echo "If you truly need an unsigned release, run this workflow via workflow_dispatch with allow_unsigned=true." >&2
+            echo "If you truly need a non-notarized release, run via workflow_dispatch with allow_unsigned=true." >&2
             exit 1
           fi
 
@@ -186,9 +193,7 @@ jobs:
           npx tauri icon src-tauri/icons/icon.svg
 
       - name: Install Apple signing certificate
-        id: apple_cert
         if: ${{ steps.signing.outputs.available == 'true' }}
-        continue-on-error: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true }}
         shell: bash
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
@@ -214,17 +219,13 @@ jobs:
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
           security default-keychain -s "$KEYCHAIN_PATH"
-
           security import "$CERT_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
           security list-keychains -d user -s "$KEYCHAIN_PATH"
           security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
-          echo "keychain_path=$KEYCHAIN_PATH" >> "$GITHUB_OUTPUT"
-
       - name: Build and sign (without notarization)
         id: tauri_signed
         if: ${{ steps.signing.outputs.available == 'true' }}
-        continue-on-error: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true }}
         shell: bash
         env:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
@@ -233,27 +234,100 @@ jobs:
           set -euo pipefail
           npx tauri build
 
+      - name: Build (unsigned fallback)
+        id: tauri_unsigned
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true && (steps.signing.outputs.available != 'true' || steps.tauri_signed.outcome == 'failure') }}
+        shell: bash
+        env:
+          # If/when enabling Tauri updater signatures
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          # Ensure this step never signs/notarizes even if APPLE_* vars
+          # exist at the workflow/job/repo level (e.g., GitHub Actions Variables).
+          unset APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID || true
+
+          npx tauri build
+
+      - name: Build state outputs
+        id: build_state
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          signed_ok=false
+          unsigned_ok=false
+
+          if [[ "${{ steps.tauri_signed.outcome }}" == "success" ]]; then
+            signed_ok=true
+          fi
+
+          if [[ "${{ steps.tauri_unsigned.outcome }}" == "success" ]]; then
+            unsigned_ok=true
+          fi
+
+          echo "signed_ok=${signed_ok}" >> "$GITHUB_OUTPUT"
+          echo "unsigned_ok=${unsigned_ok}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload build artifacts (macOS bundle)
+        if: ${{ steps.tauri_signed.outcome == 'success' || steps.tauri_unsigned.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-bundle
+          if-no-files-found: error
+          path: |
+            src-tauri/target/release/bundle/macos/*.app
+            src-tauri/target/release/bundle/dmg/*.dmg
+
+  notarize_and_release:
+    name: Notarize & Release (macOS)
+    needs: [build_macos]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download build artifacts (macOS bundle)
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-bundle
+          path: macos-bundle
+
       - name: Notarize app with retry
         id: notarize
-        if: ${{ steps.tauri_signed.outcome == 'success' }}
+        if: ${{ needs.build_macos.outputs.signing_available == 'true' && needs.build_macos.outputs.build_signed_ok == 'true' }}
         continue-on-error: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true }}
         shell: bash
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          NOTARIZE_ATTEMPTS: ${{ github.event_name == 'push' && 12 || 8 }}
         run: |
           set -euo pipefail
 
-          APP_PATH=$(ls -d src-tauri/target/release/bundle/macos/*.app | head -1)
+          APP_PATH=$(ls -d macos-bundle/*.app | head -1)
+          DMG_PATH=$(ls macos-bundle/*.dmg 2>/dev/null | head -1 || true)
+
+          if [[ -z "${APP_PATH:-}" ]]; then
+            echo "ERROR: Could not find .app bundle in downloaded artifact." >&2
+            exit 1
+          fi
+
           echo "Notarizing: $APP_PATH"
 
-          # Create a zip for notarization submission
           ZIP_PATH="$RUNNER_TEMP/notarize-app.zip"
           ditto -c -k --keepParent "$APP_PATH" "$ZIP_PATH"
 
-          ATTEMPTS=5
+          ATTEMPTS="${NOTARIZE_ATTEMPTS:-8}"
           SLEEP_SECONDS=30
+          MAX_SLEEP=600
+
+          retryable_regex='(statusCode: Optional\(5[0-9]{2}\)|\b5[0-9]{2}\b|UNEXPECTED_ERROR|server exception|Internal Server Error|Service Unavailable|Gateway Timeout|timed out|Could not connect|network|temporarily unavailable|try again at a later time)'
 
           for attempt in $(seq 1 "$ATTEMPTS"); do
             echo "=== Notarization attempt ${attempt}/${ATTEMPTS} ==="
@@ -264,33 +338,43 @@ jobs:
                 --password "$APPLE_PASSWORD" \
                 --team-id "$APPLE_TEAM_ID" \
                 --wait \
-                --timeout 10m 2>&1 | tee "$LOG"; then
-
+                --timeout 25m 2>&1 | tee "$LOG"; then
               if grep -qi 'status: Accepted' "$LOG"; then
                 echo "Notarization accepted. Stapling..."
                 xcrun stapler staple "$APP_PATH"
+                if [[ -n "${DMG_PATH:-}" ]]; then
+                  xcrun stapler staple "$DMG_PATH"
+                fi
                 echo "Done."
                 exit 0
               fi
             fi
 
-            # Check for transient errors
-            if grep -qEi '500|server exception|UNEXPECTED_ERROR|Could not connect|timed out|Internal Server Error' "$LOG"; then
+            if grep -qEi "$retryable_regex" "$LOG"; then
               echo "Transient Apple error detected."
               if [[ "$attempt" -lt "$ATTEMPTS" ]]; then
-                echo "Retrying in ${SLEEP_SECONDS}s..."
-                sleep "$SLEEP_SECONDS"
+                jitter=$((RANDOM % 15))
+                sleep_for=$((SLEEP_SECONDS + jitter))
+                echo "Retrying in ${sleep_for}s..."
+                sleep "$sleep_for"
                 SLEEP_SECONDS=$((SLEEP_SECONDS * 2))
+                if (( SLEEP_SECONDS > MAX_SLEEP )); then
+                  SLEEP_SECONDS=$MAX_SLEEP
+                fi
                 continue
               fi
-              echo "Retries exhausted."
-            else
-              echo "Notarization failed with a non-retryable error."
+              echo "Retries exhausted." >&2
+              exit 1
             fi
+
+            echo "Notarization failed with a non-retryable error." >&2
             exit 1
           done
 
-      - name: Create or update GitHub release (signed)
+          echo "Retries exhausted." >&2
+          exit 1
+
+      - name: Create or update GitHub release (notarized)
         if: ${{ steps.notarize.outcome == 'success' }}
         shell: bash
         env:
@@ -298,6 +382,7 @@ jobs:
         run: |
           set -euo pipefail
 
+          RELEASE_TAG="${{ needs.build_macos.outputs.release_tag }}"
           TITLE="AI Terminal ${RELEASE_TAG}"
           NOTES=$(cat <<'EOF'
           See the [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
@@ -310,40 +395,26 @@ jobs:
             gh release create "${RELEASE_TAG}" --title "$TITLE" --notes "$NOTES" --latest
           fi
 
-      - name: Upload signed artifacts (DMG)
+      - name: Upload notarized artifacts (DMG)
         if: ${{ steps.notarize.outcome == 'success' }}
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          ls -la src-tauri/target/release/bundle/dmg || true
-          gh release upload "${RELEASE_TAG}" src-tauri/target/release/bundle/dmg/*.dmg --clobber
+          RELEASE_TAG="${{ needs.build_macos.outputs.release_tag }}"
+          ls -la macos-bundle || true
+          gh release upload "${RELEASE_TAG}" macos-bundle/*.dmg --clobber
 
-      - name: Build (unsigned fallback)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true && (steps.signing.outputs.available != 'true' || steps.tauri_signed.outcome == 'failure' || steps.notarize.outcome == 'failure') }}
-        shell: bash
-        env:
-          # If/when enabling Tauri updater signatures
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        run: |
-          set -euo pipefail
-
-          # IMPORTANT: ensure this step never signs/notarizes even if APPLE_* vars
-          # exist at the workflow/job/repo level (e.g., GitHub Actions Variables).
-          unset APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID || true
-
-          npx tauri build
-
-      - name: Create or update GitHub release (unsigned fallback)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true && (steps.signing.outputs.available != 'true' || steps.tauri_signed.outcome == 'failure' || steps.notarize.outcome == 'failure') }}
+      - name: Create or update GitHub release (not notarized - allowed)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true && (needs.build_macos.outputs.build_unsigned_ok == 'true' || (needs.build_macos.outputs.signing_available == 'true' && needs.build_macos.outputs.build_signed_ok == 'true')) && steps.notarize.outcome != 'success' }}
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
+          RELEASE_TAG="${{ needs.build_macos.outputs.release_tag }}"
           TITLE="AI Terminal ${RELEASE_TAG}"
           NOTES=$(cat <<'EOF'
           > **Note:** This build is not notarized. On first launch, right-click the app → Open, then click Open in the dialog. See https://support.apple.com/en-us/102445 for details.
@@ -358,59 +429,39 @@ jobs:
             gh release create "${RELEASE_TAG}" --title "$TITLE" --notes "$NOTES" --latest=false --prerelease
           fi
 
-      - name: Ad-hoc codesign (unsigned fallback)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true && (steps.signing.outputs.available != 'true' || steps.tauri_signed.outcome == 'failure' || steps.notarize.outcome == 'failure') }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          APP_PATH=$(ls -d src-tauri/target/release/bundle/macos/*.app 2>/dev/null | head -1)
-          if [[ -n "$APP_PATH" ]]; then
-            echo "Ad-hoc signing: $APP_PATH"
-            codesign --force --deep --sign - "$APP_PATH"
-
-            echo "Re-creating DMG with ad-hoc signed app..."
-            DMG_PATH=$(ls src-tauri/target/release/bundle/dmg/*.dmg 2>/dev/null | head -1)
-            if [[ -n "$DMG_PATH" ]]; then
-              STAGING_DIR=$(mktemp -d)
-              cp -R "$APP_PATH" "$STAGING_DIR/"
-              rm "$DMG_PATH"
-              hdiutil create -volname "AI Terminal" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_PATH"
-              rm -rf "$STAGING_DIR"
-            fi
-          fi
-
-      - name: Upload unsigned artifacts (DMG)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true && (steps.signing.outputs.available != 'true' || steps.tauri_signed.outcome == 'failure' || steps.notarize.outcome == 'failure') }}
+      - name: Upload non-notarized artifacts (DMG)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true && (needs.build_macos.outputs.build_unsigned_ok == 'true' || (needs.build_macos.outputs.signing_available == 'true' && needs.build_macos.outputs.build_signed_ok == 'true')) && steps.notarize.outcome != 'success' }}
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          ls -la src-tauri/target/release/bundle/dmg || true
-          gh release upload "${RELEASE_TAG}" src-tauri/target/release/bundle/dmg/*.dmg --clobber
+          RELEASE_TAG="${{ needs.build_macos.outputs.release_tag }}"
+          ls -la macos-bundle || true
+          gh release upload "${RELEASE_TAG}" macos-bundle/*.dmg --clobber
 
       - name: Generate SHA-256 checksums
-        if: ${{ steps.notarize.outcome == 'success' || (github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true && (steps.signing.outputs.available != 'true' || steps.tauri_signed.outcome == 'failure' || steps.notarize.outcome == 'failure')) }}
+        if: ${{ steps.notarize.outcome == 'success' || (github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true && steps.notarize.outcome != 'success') }}
         shell: bash
         run: |
           set -euo pipefail
           OUT="$GITHUB_WORKSPACE/checksums-sha256.txt"
           : > "$OUT"
 
-          if ls src-tauri/target/release/bundle/dmg/*.dmg >/dev/null 2>&1; then
-            shasum -a 256 src-tauri/target/release/bundle/dmg/*.dmg >> "$OUT"
+          if ls macos-bundle/*.dmg >/dev/null 2>&1; then
+            shasum -a 256 macos-bundle/*.dmg >> "$OUT"
           fi
 
-          if ls src-tauri/target/release/bundle/macos/*.app >/dev/null 2>&1; then
-            # Hash the app bundle deterministically by hashing file contents.
-            find src-tauri/target/release/bundle/macos/*.app -type f -print0 | sort -z | xargs -0 shasum -a 256 >> "$OUT"
+          if ls macos-bundle/*.app >/dev/null 2>&1; then
+            find macos-bundle/*.app -type f -print0 | sort -z | xargs -0 shasum -a 256 >> "$OUT"
           fi
 
           echo "\nChecksums written to: $OUT"
 
       - name: Upload checksums to release
-        if: ${{ steps.notarize.outcome == 'success' || (github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true && (steps.signing.outputs.available != 'true' || steps.tauri_signed.outcome == 'failure' || steps.notarize.outcome == 'failure')) }}
+        if: ${{ steps.notarize.outcome == 'success' || (github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true && steps.notarize.outcome != 'success') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          RELEASE_TAG="${{ needs.build_macos.outputs.release_tag }}"
           gh release upload "${RELEASE_TAG}" "$GITHUB_WORKSPACE/checksums-sha256.txt" --clobber
