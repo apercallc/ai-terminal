@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import type { ExecutionRecord } from "@/types";
 import { getRiskColor, getRiskLabel } from "@/lib/safety/detector";
 import "./HistoryView.css";
@@ -28,6 +28,9 @@ export function HistoryView({ history, onClose, onExport }: HistoryViewProps) {
 
     return items.sort((a, b) => b.timestamp - a.timestamp);
   }, [history, filter, search]);
+
+  const successCount = useMemo(() => history.filter((h) => h.success).length, [history]);
+  const failedCount = useMemo(() => history.filter((h) => !h.success).length, [history]);
 
   return (
     <div className="history-overlay" onClick={onClose}>
@@ -61,13 +64,13 @@ export function HistoryView({ history, onClose, onExport }: HistoryViewProps) {
               className={`filter-btn ${filter === "success" ? "active" : ""}`}
               onClick={() => setFilter("success")}
             >
-              ✓ Success ({history.filter((h) => h.success).length})
+              ✓ Success ({successCount})
             </button>
             <button
               className={`filter-btn ${filter === "failed" ? "active" : ""}`}
               onClick={() => setFilter("failed")}
             >
-              ✗ Failed ({history.filter((h) => !h.success).length})
+              ✗ Failed ({failedCount})
             </button>
           </div>
           <input
@@ -105,7 +108,7 @@ export function HistoryView({ history, onClose, onExport }: HistoryViewProps) {
   );
 }
 
-function HistoryItem({ record }: { record: ExecutionRecord }) {
+const HistoryItem = memo(function HistoryItem({ record }: { record: ExecutionRecord }) {
   const [expanded, setExpanded] = useState(false);
 
   const formatTime = (ts: number) => {
@@ -155,4 +158,4 @@ function HistoryItem({ record }: { record: ExecutionRecord }) {
       )}
     </div>
   );
-}
+});

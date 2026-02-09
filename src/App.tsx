@@ -116,6 +116,21 @@ export default function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [terminalCwd, setTerminalCwd] = useState("~");
 
+  // Stable callbacks for StatusBar (avoids re-renders)
+  const handleSettingsClick = useCallback(() => setShowSettings(true), []);
+  const handleHistoryClick = useCallback(() => setShowHistory(true), []);
+  const handleBookmarksClick = useCallback(() => setShowBookmarks(true), []);
+  const handleTemplatesClick = useCallback(() => setShowTemplates(true), []);
+  const handleToolsClick = useCallback(() => setShowTools(true), []);
+  const handleRecordingClick = useCallback(() => setShowRecording(true), []);
+  const handleCollabClick = useCallback(() => setShowCollab(true), []);
+  const handleSSHClick = useCallback(() => setShowSSH(true), []);
+  const handleExportClick = useCallback(() => setShowExport(true), []);
+  const handleShortcutsClick = useCallback(() => setShowShortcuts(true), []);
+  const handlePluginsClick = useCallback(() => setShowPlugins(true), []);
+  const handleMetricsClick = useCallback(() => setShowMetrics(true), []);
+  const handlePaletteClick = useCallback(() => setShowGlobalPalette(true), []);
+
   const activePtyId = ptyIds[activeTabId] || null;
   const terminalBufferRef = useRef<(() => string) | null>(null);
 
@@ -307,14 +322,21 @@ export default function App() {
     };
   }, [activeTabId, agentState, cancel, approveStep, handleSplit]);
 
-  // Track recording state
+  // Track recording state via event callback instead of polling
   useEffect(() => {
     const manager = getRecordingManager();
-    const interval = setInterval(() => {
-      const next = manager.isRecording();
-      setIsRecording((prev) => (prev === next ? prev : next));
-    }, 500);
-    return () => clearInterval(interval);
+    // Check initial state
+    setIsRecording(manager.isRecording());
+    // Subscribe to changes via a lightweight wrapper
+    const onRecordingChange = () => {
+      setIsRecording(manager.isRecording());
+    };
+    manager.onStateChange = onRecordingChange;
+    return () => {
+      if (manager.onStateChange === onRecordingChange) {
+        manager.onStateChange = null;
+      }
+    };
   }, []);
 
   // Poll CWD from the Rust backend
@@ -322,6 +344,7 @@ export default function App() {
     if (!activePtyId) return;
     let cancelled = false;
 
+    // Cache the invoke function at module scope to avoid repeated dynamic imports
     let invokeFn: (<T>(cmd: string, args?: Record<string, unknown>) => Promise<T>) | null = null;
     const poll = async () => {
       try {
@@ -338,7 +361,7 @@ export default function App() {
       }
     };
     poll(); // initial fetch
-    const interval = setInterval(poll, 2000);
+    const interval = setInterval(poll, 3000); // Reduced from 2s to 3s
     return () => {
       cancelled = true;
       clearInterval(interval);
@@ -532,6 +555,20 @@ export default function App() {
     [handleNewTab, handleSplit, cancel],
   );
 
+  const renderTerminal = useCallback(
+    () => (
+      <TerminalView
+        key={activeTabId}
+        theme={theme}
+        scrollbackLimit={settings.scrollbackLimit}
+        onSessionReady={handlePtyReady}
+        onConnectionChange={handleConnectionChange}
+        onBufferReady={handleBufferReady}
+      />
+    ),
+    [activeTabId, theme, settings.scrollbackLimit, handlePtyReady, handleConnectionChange, handleBufferReady],
+  );
+
   return (
     <div className="app" data-theme={theme}>
       <div className="app-titlebar">
@@ -559,16 +596,7 @@ export default function App() {
           onActivatePane={setActivePaneId}
           onSplit={handleSplit}
           onClosePane={handleClosePane}
-          renderTerminal={() => (
-            <TerminalView
-              key={activeTabId}
-              theme={theme}
-              scrollbackLimit={settings.scrollbackLimit}
-              onSessionReady={handlePtyReady}
-              onConnectionChange={handleConnectionChange}
-              onBufferReady={handleBufferReady}
-            />
-          )}
+          renderTerminal={renderTerminal}
         />
       </div>
 
@@ -603,19 +631,19 @@ export default function App() {
         connectionStatus={connectionStatus}
         isConnected={isConnected}
         isRecording={isRecording}
-        onSettingsClick={() => setShowSettings(true)}
-        onHistoryClick={() => setShowHistory(true)}
-        onBookmarksClick={() => setShowBookmarks(true)}
-        onTemplatesClick={() => setShowTemplates(true)}
-        onToolsClick={() => setShowTools(true)}
-        onRecordingClick={() => setShowRecording(true)}
-        onCollabClick={() => setShowCollab(true)}
-        onSSHClick={() => setShowSSH(true)}
-        onExportClick={() => setShowExport(true)}
-        onShortcutsClick={() => setShowShortcuts(true)}
-        onPluginsClick={() => setShowPlugins(true)}
-        onMetricsClick={() => setShowMetrics(true)}
-        onPaletteClick={() => setShowGlobalPalette(true)}
+        onSettingsClick={handleSettingsClick}
+        onHistoryClick={handleHistoryClick}
+        onBookmarksClick={handleBookmarksClick}
+        onTemplatesClick={handleTemplatesClick}
+        onToolsClick={handleToolsClick}
+        onRecordingClick={handleRecordingClick}
+        onCollabClick={handleCollabClick}
+        onSSHClick={handleSSHClick}
+        onExportClick={handleExportClick}
+        onShortcutsClick={handleShortcutsClick}
+        onPluginsClick={handlePluginsClick}
+        onMetricsClick={handleMetricsClick}
+        onPaletteClick={handlePaletteClick}
         cwd={terminalCwd}
       />
 

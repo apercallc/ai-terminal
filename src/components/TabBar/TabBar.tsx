@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { TerminalTab } from "@/types";
 import "./TabBar.css";
 
@@ -9,7 +10,7 @@ interface TabBarProps {
   onNewTab: () => void;
 }
 
-export function TabBar({ tabs, activeTabId, onSelectTab, onCloseTab, onNewTab }: TabBarProps) {
+export const TabBar = memo(function TabBar({ tabs, activeTabId, onSelectTab, onCloseTab, onNewTab }: TabBarProps) {
   return (
     <div className="tab-bar">
       <div className="tab-list">
@@ -48,4 +49,4 @@ export function TabBar({ tabs, activeTabId, onSelectTab, onCloseTab, onNewTab }:
       </button>
     </div>
   );
-}
+});

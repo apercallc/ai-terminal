@@ -12,6 +12,9 @@ export class RecordingManager {
   private activeRecording: TerminalRecording | null = null;
   private startTime = 0;
 
+  /** External callback for state change notifications (avoids polling). */
+  onStateChange: (() => void) | null = null;
+
   constructor() {
     this.loadRecordings();
   }
@@ -53,6 +56,7 @@ export class RecordingManager {
       },
     };
 
+    this.onStateChange?.();
     return this.activeRecording;
   }
 
@@ -85,6 +89,7 @@ export class RecordingManager {
     this.saveRecordings();
     this.activeRecording = null;
 
+    this.onStateChange?.();
     return recording;
   }
 
@@ -194,17 +199,25 @@ export class RecordingManager {
 
   private saveRecordings(): void {
     try {
-      localStorage.setItem(RECORDINGS_STORAGE_KEY, JSON.stringify(this.recordings));
+      // Defer heavy serialization to avoid blocking the main thread
+      const recordings = this.recordings;
+      queueMicrotask(() => {
+        try {
+          localStorage.setItem(RECORDINGS_STORAGE_KEY, JSON.stringify(recordings));
+        } catch {
+          // Storage full — remove oldest recordings
+          while (recordings.length > 5) {
+            recordings.pop();
+          }
+          try {
+            localStorage.setItem(RECORDINGS_STORAGE_KEY, JSON.stringify(recordings));
+          } catch {
+            // Give up
+          }
+        }
+      });
     } catch {
-      // Storage full — remove oldest recordings
-      while (this.recordings.length > 5) {
-        this.recordings.pop();
-      }
-      try {
-        localStorage.setItem(RECORDINGS_STORAGE_KEY, JSON.stringify(this.recordings));
-      } catch {
-        // Give up
-      }
+      // Ignore
     }
   }
 }

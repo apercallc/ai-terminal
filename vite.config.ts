@@ -11,6 +11,17 @@ export default defineConfig(async () => ({
       "@": resolve(__dirname, "src"),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          xterm: ["@xterm/xterm", "@xterm/addon-fit", "@xterm/addon-web-links", "@xterm/addon-search"],
+          tauri: ["@tauri-apps/api"],
+        },
+      },
+    },
+  },
   clearScreen: false,
   server: {
     port: 1420,

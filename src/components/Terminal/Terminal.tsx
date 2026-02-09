@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, memo } from "react";
 import type { Theme } from "@/types";
 import { useTerminal } from "@/hooks/useTerminal";
 import "./Terminal.css";
@@ -12,7 +12,7 @@ interface TerminalProps {
   onCwdChange?: (cwd: string) => void;
 }
 
-export function TerminalView({
+export const TerminalView = memo(function TerminalView({
   theme,
   scrollbackLimit,
   onSessionReady,
@@ -57,4 +57,4 @@ export function TerminalView({
       )}
     </div>
   );
-}
+});

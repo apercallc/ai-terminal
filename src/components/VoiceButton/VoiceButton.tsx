@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { getVoiceInputManager } from "@/lib/voice/manager";
 import "./VoiceButton.css";
 
@@ -11,6 +11,21 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (errorTimerRef.current) {
+        clearTimeout(errorTimerRef.current);
+      }
+    };
+  }, []);
+
+  const clearErrorAfterDelay = useCallback(() => {
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    errorTimerRef.current = setTimeout(() => setError(null), 3000);
+  }, []);
 
   const handleToggle = useCallback(() => {
     if (disabled) return;
@@ -25,7 +40,7 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
 
     if (!manager.supported) {
       setError("Voice input not supported in this browser");
-      setTimeout(() => setError(null), 3000);
+      clearErrorAfterDelay();
       return;
     }
 
@@ -40,7 +55,7 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
         setError(state.error);
         setListening(false);
         setInterim("");
-        setTimeout(() => setError(null), 3000);
+        clearErrorAfterDelay();
         unsubscribe();
       } else if (!state.isListening) {
         setListening(false);
@@ -50,7 +65,7 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
     });
     manager.start();
     setListening(true);
-  }, [disabled, listening, onTranscript]);
+  }, [disabled, listening, onTranscript, clearErrorAfterDelay]);
 
   return (
     <div className="voice-button-wrapper">

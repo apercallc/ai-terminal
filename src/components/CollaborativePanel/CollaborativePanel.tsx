@@ -18,7 +18,18 @@ export function CollaborativePanel({ onClose, onExecute }: CollaborativePanelPro
   useEffect(() => {
     const interval = setInterval(() => {
       const next = manager.getSession();
-      setSession(next ? { ...next } : null);
+      setSession((prev) => {
+        // Only update if the session data actually changed
+        if (!next && !prev) return prev;
+        if (!next || !prev) return next ? { ...next } : null;
+        if (
+          next.participants.length === prev.participants.length &&
+          next.isHost === prev.isHost
+        ) {
+          return prev;
+        }
+        return { ...next };
+      });
     }, 1000);
     return () => clearInterval(interval);
   }, [manager]);

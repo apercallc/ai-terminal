@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import type { AgentState, ExecutionMode, ProviderType } from "@/types";
 import "./StatusBar.css";
 
@@ -26,7 +27,7 @@ interface StatusBarProps {
   cwd?: string;
 }
 
-export function StatusBar({
+export const StatusBar = memo(function StatusBar({
   agentState,
   mode,
   providerType,
@@ -50,7 +51,7 @@ export function StatusBar({
   isRecording,
   cwd,
 }: StatusBarProps) {
-  const stateLabel = (() => {
+  const stateLabel = useMemo(() => {
     switch (agentState) {
       case "idle":
         return "Ready";
@@ -73,9 +74,9 @@ export function StatusBar({
       default:
         return "Unknown";
     }
-  })();
+  }, [agentState]);
 
-  const stateClass = (() => {
+  const stateClass = useMemo(() => {
     switch (agentState) {
       case "complete":
         return "state-success";
@@ -87,9 +88,9 @@ export function StatusBar({
       default:
         return "state-active";
     }
-  })();
+  }, [agentState]);
 
-  const providerLabel = (() => {
+  const providerLabel = useMemo(() => {
     switch (providerType) {
       case "openai":
         return "OpenAI";
@@ -98,9 +99,9 @@ export function StatusBar({
       case "local":
         return "Local";
     }
-  })();
+  }, [providerType]);
 
-  const connectionIcon = (() => {
+  const connectionIcon = useMemo(() => {
     if (!isConnected) return "🔴";
     switch (connectionStatus) {
       case "connected":
@@ -112,7 +113,7 @@ export function StatusBar({
       default:
         return "⚪";
     }
-  })();
+  }, [isConnected, connectionStatus]);
 
   return (
     <div className="status-bar">
@@ -253,4 +254,4 @@ export function StatusBar({
       </div>
     </div>
   );
-}
+});
