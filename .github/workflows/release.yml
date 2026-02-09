@@ -177,31 +177,102 @@ jobs:
           # Icons are required at compile/package time but are gitignored.
           npx tauri icon src-tauri/icons/icon.svg
 
-      - name: Build and create release
+      - name: Install Apple signing certificate
+        id: apple_cert
+        if: ${{ steps.signing.outputs.available == 'true' }}
+        continue-on-error: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true }}
+        shell: bash
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          CERT_PATH="$RUNNER_TEMP/apple_certificate.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+          KEYCHAIN_PASSWORD="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+          echo "$APPLE_CERTIFICATE" | base64 --decode > "$CERT_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          security import "$CERT_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          echo "keychain_path=$KEYCHAIN_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Build (signed + notarized) with retry
         id: tauri_signed
         if: ${{ steps.signing.outputs.available == 'true' }}
         continue-on-error: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true }}
-        uses: tauri-apps/tauri-action@v0
+        shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # macOS code signing + notarization (set these secrets in repo settings)
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          # If/when enabling Tauri updater signatures
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        with:
-          tagName: ${{ env.RELEASE_TAG }}
-          releaseName: "AI Terminal ${{ env.RELEASE_TAG }}"
-          releaseBody: |
-            See the [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
-          releaseDraft: false
-          prerelease: false
-          tauriScript: npx tauri
+        run: |
+          set -euo pipefail
+
+          LOG="$RUNNER_TEMP/tauri-build.log"
+          ATTEMPTS=5
+          SLEEP_SECONDS=30
+
+          for attempt in $(seq 1 "$ATTEMPTS"); do
+            echo "=== Tauri build attempt ${attempt}/${ATTEMPTS} ==="
+            : > "$LOG"
+
+            if npx tauri build 2>&1 | tee -a "$LOG"; then
+              echo "Build succeeded."
+              exit 0
+            fi
+
+            if grep -q "HTTP status code: 500" "$LOG"; then
+              echo "Notarization returned HTTP 500 (Apple-side transient)."
+              if [[ "$attempt" -lt "$ATTEMPTS" ]]; then
+                echo "Retrying in ${SLEEP_SECONDS}s..."
+                sleep "$SLEEP_SECONDS"
+                SLEEP_SECONDS=$((SLEEP_SECONDS * 2))
+                continue
+              fi
+            fi
+
+            echo "Build failed with a non-retryable error (or retries exhausted)."
+            exit 1
+          done
+
+      - name: Create or update GitHub release (signed)
+        if: ${{ steps.tauri_signed.outcome == 'success' }}
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          TITLE="AI Terminal ${RELEASE_TAG}"
+          NOTES=$(cat <<'EOF'
+          See the [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+          EOF
+          )
+
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "Release already exists: ${RELEASE_TAG}"
+          else
+            gh release create "${RELEASE_TAG}" --title "$TITLE" --notes "$NOTES" --latest
+          fi
+
+      - name: Upload signed artifacts (DMG)
+        if: ${{ steps.tauri_signed.outcome == 'success' }}
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          ls -la src-tauri/target/release/bundle/dmg || true
+          gh release upload "${RELEASE_TAG}" src-tauri/target/release/bundle/dmg/*.dmg --clobber
 
       - name: Build and create release (unsigned fallback)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true && (steps.signing.outputs.available != 'true' || steps.tauri_signed.outcome == 'failure') }}
