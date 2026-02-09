@@ -180,6 +180,7 @@ jobs:
       - name: Build and create release
         id: tauri_signed
         if: ${{ steps.signing.outputs.available == 'true' }}
+        continue-on-error: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true }}
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -203,10 +204,18 @@ jobs:
           tauriScript: npx tauri
 
       - name: Build and create release (unsigned fallback)
-        if: ${{ steps.signing.outputs.available != 'true' && github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true && (steps.signing.outputs.available != 'true' || steps.tauri_signed.outcome == 'failure') }}
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # IMPORTANT: ensure this step never signs/notarizes even if APPLE_* vars
+          # exist at the workflow/job/repo level (e.g., GitHub Actions Variables).
+          APPLE_CERTIFICATE: ""
+          APPLE_CERTIFICATE_PASSWORD: ""
+          APPLE_SIGNING_IDENTITY: ""
+          APPLE_ID: ""
+          APPLE_PASSWORD: ""
+          APPLE_TEAM_ID: ""
           # If/when enabling Tauri updater signatures
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
@@ -222,7 +231,7 @@ jobs:
           tauriScript: npx tauri
 
       - name: Ad-hoc codesign (unsigned fallback)
-        if: ${{ steps.signing.outputs.available != 'true' && github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true && (steps.signing.outputs.available != 'true' || steps.tauri_signed.outcome == 'failure') }}
         shell: bash
         run: |
           set -euo pipefail
