@@ -5,6 +5,11 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish (must start with v, e.g. v1.2.3)"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -50,6 +55,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -67,6 +74,51 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Resolve release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+
+          if [[ -z "${TAG}" ]]; then
+            echo "ERROR: No release tag provided." >&2
+            exit 1
+          fi
+
+          if [[ "${TAG}" != v* ]]; then
+            echo "ERROR: Release tag must start with 'v' (got: ${TAG})." >&2
+            exit 1
+          fi
+
+          echo "RELEASE_TAG=${TAG}" >> "$GITHUB_ENV"
+
+      - name: Ensure tag exists (manual dispatch)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git fetch --tags --force
+
+          if git rev-parse "refs/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "Tag already exists: ${RELEASE_TAG}"
+            exit 0
+          fi
+
+          echo "Creating tag ${RELEASE_TAG} at ${GITHUB_SHA}"
+          git tag "${RELEASE_TAG}" "${GITHUB_SHA}"
+          git push origin "refs/tags/${RELEASE_TAG}"
 
       - name: Generate Tauri icons
         shell: bash
@@ -93,8 +145,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "AI Terminal ${{ github.ref_name }}"
+          tagName: ${{ env.RELEASE_TAG }}
+          releaseName: "AI Terminal ${{ env.RELEASE_TAG }}"
           releaseBody: |
             See the [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
           releaseDraft: false
@@ -110,8 +162,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "AI Terminal ${{ github.ref_name }}"
+          tagName: ${{ env.RELEASE_TAG }}
+          releaseName: "AI Terminal ${{ env.RELEASE_TAG }}"
           releaseBody: |
             > **Note:** This build is not notarized. On first launch, right-click the app → Open, then click Open in the dialog. See [Apple support](https://support.apple.com/en-us/102445) for details.
 
@@ -163,4 +215,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${{ github.ref_name }}" "$GITHUB_WORKSPACE/checksums-sha256.txt" --clobber
+          gh release upload "${RELEASE_TAG}" "$GITHUB_WORKSPACE/checksums-sha256.txt" --clobber
