@@ -130,6 +130,24 @@ jobs:
             exit 1
           fi
 
+      - name: Detect signing/notarization availability
+        id: signing
+        shell: bash
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$APPLE_CERTIFICATE" && -n "$APPLE_CERTIFICATE_PASSWORD" && -n "$APPLE_SIGNING_IDENTITY" && -n "$APPLE_TEAM_ID" && -n "$APPLE_ID" && -n "$APPLE_PASSWORD" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Ensure tag exists (manual dispatch)
         if: ${{ github.event_name == 'workflow_dispatch' }}
         shell: bash
@@ -161,7 +179,7 @@ jobs:
 
       - name: Build and create release
         id: tauri_signed
-        if: ${{ secrets.APPLE_CERTIFICATE != '' && secrets.APPLE_CERTIFICATE_PASSWORD != '' && secrets.APPLE_SIGNING_IDENTITY != '' && secrets.APPLE_TEAM_ID != '' && secrets.APPLE_ID != '' && secrets.APPLE_PASSWORD != '' }}
+        if: ${{ steps.signing.outputs.available == 'true' }}
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -185,7 +203,7 @@ jobs:
           tauriScript: npx tauri
 
       - name: Build and create release (unsigned fallback)
-        if: ${{ steps.tauri_signed.outcome != 'success' && github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true }}
+        if: ${{ steps.signing.outputs.available != 'true' && github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true }}
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -204,7 +222,7 @@ jobs:
           tauriScript: npx tauri
 
       - name: Ad-hoc codesign (unsigned fallback)
-        if: ${{ steps.tauri_signed.outcome != 'success' && github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true }}
+        if: ${{ steps.signing.outputs.available != 'true' && github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true }}
         shell: bash
         run: |
           set -euo pipefail
