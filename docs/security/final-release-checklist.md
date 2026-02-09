@@ -27,4 +27,4 @@
 ## Incident response
 
 - [ ] SECURITY.md present with working disclosure email
-- [ ] Triage/runbook for incoming reports
+- [ ] Triage/runbook for incoming reports (see incident-response.md)

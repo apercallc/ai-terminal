@@ -3,7 +3,7 @@
 ## Prerequisites
 
 | Requirement | Version | Install |
-|------------|---------|---------|
+| ----------- | ------- | ------- |
 | macOS | 10.15+ | — |
 | Node.js | 20+ | [nodejs.org](https://nodejs.org/) or `brew install node` |
 | Rust | latest stable | [rustup.rs](https://rustup.rs/) |
@@ -21,7 +21,7 @@ cd ai-terminal
 ### 2. Install Frontend Dependencies
 
 ```bash
-npm install
+npm ci
 ```
 
 ### 3. Verify Rust Installation
@@ -106,7 +106,11 @@ npm test
 npm run test:coverage
 
 # E2E (requires dev server)
-npx playwright test
+# Install Playwright browser dependencies once
+npx playwright install --with-deps chromium
+
+# Then run E2E
+npm run test:e2e
 ```
 
 ## Troubleshooting

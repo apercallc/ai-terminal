@@ -4,7 +4,7 @@ AI-powered macOS terminal app that can run commands for you, troubleshoot errors
 
 ## Download
 
-- Download (GitHub Releases): https://github.com/apercallc/ai-terminal/releases
+- Download (GitHub Releases): <https://github.com/apercallc/ai-terminal/releases>
 
 Download the `.dmg` from the latest release and install the app normally.
 
@@ -74,6 +74,8 @@ Build output (macOS): `src-tauri/target/release/bundle/dmg/`
 
 This repo publishes public release downloads via GitHub Releases.
 
+For a step-by-step production checklist (signing/notarization, clean-machine verification, website download config), see `docs/production-readiness.md`.
+
 1. Update versions (keep these in sync):
    - `package.json` version
    - `src-tauri/tauri.conf.json` version
@@ -86,6 +88,8 @@ git push origin v1.0.1
 ```
 
 That triggers the GitHub Actions workflow and uploads the `.dmg` to the GitHub Release page.
+
+The release workflow also uploads `checksums-sha256.txt` alongside the assets.
 
 ## Security Notes
 

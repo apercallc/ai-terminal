@@ -5,6 +5,7 @@
 ### `cargo build` fails with missing system libraries
 
 **Fix**: Install Xcode Command Line Tools:
+
 ```bash
 xcode-select --install
 ```
@@ -14,6 +15,7 @@ xcode-select --install
 **Cause**: Vite dev server hasn't started yet.
 
 **Fix**: Wait a few seconds for Vite to compile. Check that port 1420 is not in use:
+
 ```bash
 lsof -i :1420
 ```
@@ -21,6 +23,7 @@ lsof -i :1420
 ### Rust compilation is slow
 
 **Fix**: Use `sccache` for caching:
+
 ```bash
 brew install sccache
 export RUSTC_WRAPPER=sccache
@@ -107,11 +110,13 @@ export RUSTC_WRAPPER=sccache
 ## Log Files
 
 Logs are stored at:
-```
+
+```text
 ~/Library/Application Support/com.aiterminal.app/logs/
 ```
 
-Each file is named `YYYY-MM-DD.jsonl` and contains one JSON entry per line:
+Each file is named `audit-YYYY-MM-DD.jsonl` and contains one JSON entry per line:
+
 ```json
 {
   "id": "uuid",

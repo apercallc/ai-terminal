@@ -10,6 +10,11 @@ on:
         description: "Release tag to publish (must start with v, e.g. v1.2.3)"
         required: true
         type: string
+      allow_unsigned:
+        description: "Allow publishing an unsigned/not-notarized release (NOT recommended)"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -48,6 +53,12 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E smoke tests
+        run: npm run test:e2e
 
   release:
     name: Build & Release
@@ -98,6 +109,27 @@ jobs:
 
           echo "RELEASE_TAG=${TAG}" >> "$GITHUB_ENV"
 
+      - name: Require signing/notarization for production tags
+        if: ${{ github.event_name == 'push' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          missing=()
+          [[ -n "${{ secrets.APPLE_CERTIFICATE }}" ]] || missing+=(APPLE_CERTIFICATE)
+          [[ -n "${{ secrets.APPLE_CERTIFICATE_PASSWORD }}" ]] || missing+=(APPLE_CERTIFICATE_PASSWORD)
+          [[ -n "${{ secrets.APPLE_SIGNING_IDENTITY }}" ]] || missing+=(APPLE_SIGNING_IDENTITY)
+          [[ -n "${{ secrets.APPLE_TEAM_ID }}" ]] || missing+=(APPLE_TEAM_ID)
+          [[ -n "${{ secrets.APPLE_ID }}" ]] || missing+=(APPLE_ID)
+          [[ -n "${{ secrets.APPLE_PASSWORD }}" ]] || missing+=(APPLE_PASSWORD)
+
+          if (( ${#missing[@]} > 0 )); then
+            echo "ERROR: Missing required signing/notarization secrets for a production tag release:" >&2
+            printf ' - %s\n' "${missing[@]}" >&2
+            echo "If you truly need an unsigned release, run this workflow via workflow_dispatch with allow_unsigned=true." >&2
+            exit 1
+          fi
+
       - name: Ensure tag exists (manual dispatch)
         if: ${{ github.event_name == 'workflow_dispatch' }}
         shell: bash
@@ -130,7 +162,6 @@ jobs:
       - name: Build and create release
         id: tauri_signed
         if: ${{ secrets.APPLE_CERTIFICATE != '' && secrets.APPLE_CERTIFICATE_PASSWORD != '' && secrets.APPLE_SIGNING_IDENTITY != '' && secrets.APPLE_TEAM_ID != '' && secrets.APPLE_ID != '' && secrets.APPLE_PASSWORD != '' }}
-        continue-on-error: true
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -154,7 +185,7 @@ jobs:
           tauriScript: npx tauri
 
       - name: Build and create release (unsigned fallback)
-        if: ${{ steps.tauri_signed.outcome != 'success' }}
+        if: ${{ steps.tauri_signed.outcome != 'success' && github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true }}
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -169,11 +200,11 @@ jobs:
 
             See the [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
           releaseDraft: false
-          prerelease: false
+          prerelease: true
           tauriScript: npx tauri
 
       - name: Ad-hoc codesign (unsigned fallback)
-        if: ${{ steps.tauri_signed.outcome != 'success' }}
+        if: ${{ steps.tauri_signed.outcome != 'success' && github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true }}
         shell: bash
         run: |
           set -euo pipefail
