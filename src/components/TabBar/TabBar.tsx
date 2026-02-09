@@ -10,7 +10,13 @@ interface TabBarProps {
   onNewTab: () => void;
 }
 
-export const TabBar = memo(function TabBar({ tabs, activeTabId, onSelectTab, onCloseTab, onNewTab }: TabBarProps) {
+export const TabBar = memo(function TabBar({
+  tabs,
+  activeTabId,
+  onSelectTab,
+  onCloseTab,
+  onNewTab,
+}: TabBarProps) {
   return (
     <div className="tab-bar">
       <div className="tab-list">

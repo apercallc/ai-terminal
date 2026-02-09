@@ -566,7 +566,14 @@ export default function App() {
         onBufferReady={handleBufferReady}
       />
     ),
-    [activeTabId, theme, settings.scrollbackLimit, handlePtyReady, handleConnectionChange, handleBufferReady],
+    [
+      activeTabId,
+      theme,
+      settings.scrollbackLimit,
+      handlePtyReady,
+      handleConnectionChange,
+      handleBufferReady,
+    ],
   );
 
   return (

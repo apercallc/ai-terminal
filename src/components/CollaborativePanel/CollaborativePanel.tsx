@@ -22,10 +22,7 @@ export function CollaborativePanel({ onClose, onExecute }: CollaborativePanelPro
         // Only update if the session data actually changed
         if (!next && !prev) return prev;
         if (!next || !prev) return next ? { ...next } : null;
-        if (
-          next.participants.length === prev.participants.length &&
-          next.isHost === prev.isHost
-        ) {
+        if (next.participants.length === prev.participants.length && next.isHost === prev.isHost) {
           return prev;
         }
         return { ...next };
