@@ -68,6 +68,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate Tauri icons
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Icons are required at compile/package time but are gitignored.
+          npx tauri icon src-tauri/icons/icon.svg
+
       - name: Build and create release
         uses: tauri-apps/tauri-action@v0
         env:

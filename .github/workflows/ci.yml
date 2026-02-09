@@ -56,6 +56,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -65,6 +71,13 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+
+      - name: Generate Tauri icons
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Icons are required at compile-time via tauri::generate_context! and are gitignored.
+          npx -y @tauri-apps/cli@2 icon src-tauri/icons/icon.svg
 
       - name: Check formatting
         run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
@@ -95,6 +108,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Generate Tauri icons
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx tauri icon src-tauri/icons/icon.svg
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
