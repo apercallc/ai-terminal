@@ -129,10 +129,12 @@ fn redact_secrets(input: &str) -> String {
     // Authorization: Bearer <token>
     loop {
         let lower = out.to_ascii_lowercase();
-        let Some(pos) = lower.find("authorization: bearer ") else { break };
+        let Some(pos) = lower.find("authorization: bearer ") else {
+            break;
+        };
         let start = pos + "authorization: bearer ".len();
         let end = out[start..]
-            .find(|c: char| c.is_whitespace() || c == '"' || c == '\'' )
+            .find(|c: char| c.is_whitespace() || c == '"' || c == '\'')
             .map(|i| start + i)
             .unwrap_or(out.len());
         if end > start {
@@ -147,7 +149,9 @@ fn redact_secrets(input: &str) -> String {
         let mut search_from = 0usize;
         loop {
             let hay = &out[search_from..];
-            let Some(rel) = hay.find(prefix) else { break };
+            let Some(rel) = hay.find(prefix) else {
+                break;
+            };
             let start = search_from + rel;
             let mut end = start + prefix.len();
             // Consume token-ish characters
@@ -173,7 +177,9 @@ fn redact_secrets(input: &str) -> String {
         let mut idx = 0usize;
         loop {
             let lower = out.to_ascii_lowercase();
-            let Some(pos) = lower[idx..].find(&needle.to_ascii_lowercase()) else { break };
+            let Some(pos) = lower[idx..].find(&needle.to_ascii_lowercase()) else {
+                break;
+            };
             let start = idx + pos;
             let after = start + needle.len();
             // Look for separator
@@ -189,7 +195,7 @@ fn redact_secrets(input: &str) -> String {
                 value_start += 1;
             }
             let value_end = out[value_start..]
-                .find(|c: char| c.is_whitespace() || c == '"' || c == '\'' )
+                .find(|c: char| c.is_whitespace() || c == '"' || c == '\'')
                 .map(|i| value_start + i)
                 .unwrap_or(out.len());
             if value_end > value_start {
