@@ -184,7 +184,7 @@ fn redact_secrets(input: &str) -> String {
             let after = start + needle.len();
             // Look for separator
             let sep = out[after..]
-                .find(|c: char| matches!(c, '=' | ':'))
+                .find(|c: char| ['=', ':'].contains(&c))
                 .map(|i| after + i);
             let Some(sep_pos) = sep else {
                 idx = after;
