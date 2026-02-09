@@ -35,8 +35,8 @@ impl Default for PtyManager {
     }
 }
 
-fn emit_pty_exit_once(app: &AppHandle, session_id: &str, exit_emitted: &Arc<AtomicBool>) {
-    if !exit_emitted.swap(true, Ordering::SeqCst) {
+fn emit_pty_exit_once(app: &AppHandle, session_id: &str, exit_emitted: &AtomicBool) {
+    if !exit_emitted.swap(true, Ordering::AcqRel) {
         let _ = app.emit("pty-exit", session_id);
     }
 }
@@ -47,17 +47,17 @@ fn terminate_pid(pid: u32) {
         return;
     }
 
+    let pid_str = pid.to_string();
     // Best-effort: SIGTERM then SIGKILL shortly after.
-    let pid_i32 = pid as i32;
-    unsafe {
-        let _ = libc::kill(pid_i32, libc::SIGTERM);
-    }
+    let _ = std::process::Command::new("kill")
+        .args(["-TERM", &pid_str])
+        .status();
 
-    thread::spawn(move || {
+    let _ = thread::spawn(move || {
         thread::sleep(std::time::Duration::from_millis(750));
-        unsafe {
-            let _ = libc::kill(pid_i32, libc::SIGKILL);
-        }
+        let _ = std::process::Command::new("kill")
+            .args(["-KILL", &pid_str])
+            .status();
     });
 }
 
@@ -142,12 +142,12 @@ pub fn spawn_shell(
     let app_handle = app.clone();
     let sid = session_id.clone();
     let exit_emitted_reader = exit_emitted.clone();
-    thread::spawn(move || {
+    let _ = thread::spawn(move || {
         let mut buf = [0u8; 4096];
         loop {
             match reader.read(&mut buf) {
                 Ok(0) => {
-                    emit_pty_exit_once(&app_handle, &sid, &exit_emitted_reader);
+                    emit_pty_exit_once(&app_handle, &sid, exit_emitted_reader.as_ref());
                     break;
                 }
                 Ok(n) => {
@@ -166,7 +166,7 @@ pub fn spawn_shell(
                     );
                 }
                 Err(_) => {
-                    emit_pty_exit_once(&app_handle, &sid, &exit_emitted_reader);
+                    emit_pty_exit_once(&app_handle, &sid, exit_emitted_reader.as_ref());
                     break;
                 }
             }
@@ -182,10 +182,10 @@ pub fn spawn_shell(
     let app_handle2 = app.clone();
     let sid2 = session_id.clone();
     let exit_emitted_waiter = exit_emitted.clone();
-    thread::spawn(move || {
+    let _ = thread::spawn(move || {
         let mut child = child;
         let _ = child.wait();
-        emit_pty_exit_once(&app_handle2, &sid2, &exit_emitted_waiter);
+        emit_pty_exit_once(&app_handle2, &sid2, exit_emitted_waiter.as_ref());
 
         if let Some(manager) = app_handle2.try_state::<PtyManager>() {
             manager.sessions.lock().remove(&sid2);
