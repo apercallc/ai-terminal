@@ -369,9 +369,9 @@ pub fn list_directory(path: String) -> Result<serde_json::Value, String> {
     let last_component = typed.rsplit('/').next().unwrap_or(typed);
     let show_hidden = last_component.starts_with('.');
 
-    let target = if path.starts_with('~') {
+    let target = if let Some(stripped) = path.strip_prefix('~') {
         let home = dirs::home_dir().ok_or_else(|| "Cannot resolve home directory".to_string())?;
-        home.join(&path[1..].trim_start_matches('/'))
+        home.join(stripped.trim_start_matches('/'))
     } else {
         Path::new(&path).to_path_buf()
     };
