@@ -148,6 +148,14 @@ jobs:
             echo "available=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Fail fast if signing unavailable and unsigned not allowed
+        if: ${{ github.event_name == 'workflow_dispatch' && steps.signing.outputs.available != 'true' && inputs.allow_unsigned != true }}
+        shell: bash
+        run: |
+          echo "ERROR: Apple signing secrets are not configured and 'allow_unsigned' is not enabled." >&2
+          echo "Either add the required APPLE_* secrets or re-run with allow_unsigned=true." >&2
+          exit 1
+
       - name: Ensure tag exists (manual dispatch)
         if: ${{ github.event_name == 'workflow_dispatch' }}
         shell: bash
@@ -239,17 +247,19 @@ jobs:
               exit 0
             fi
 
-            if grep -q "HTTP status code: 500" "$LOG"; then
-              echo "Notarization returned HTTP 500 (Apple-side transient)."
+            # Detect transient Apple notarization errors (HTTP 500, server exception, timeout)
+            if grep -qEi 'statusCode[:"= ]*500|HTTP status code: 500|server exception|UNEXPECTED_ERROR|NSURLError.*timed out|Could not connect to the server' "$LOG"; then
+              echo "Notarization hit a transient Apple-side error."
               if [[ "$attempt" -lt "$ATTEMPTS" ]]; then
                 echo "Retrying in ${SLEEP_SECONDS}s..."
                 sleep "$SLEEP_SECONDS"
                 SLEEP_SECONDS=$((SLEEP_SECONDS * 2))
                 continue
               fi
+              echo "Retries exhausted."
+            else
+              echo "Build failed with a non-retryable error."
             fi
-
-            echo "Build failed with a non-retryable error (or retries exhausted)."
             exit 1
           done
 
@@ -353,6 +363,7 @@ jobs:
           gh release upload "${RELEASE_TAG}" src-tauri/target/release/bundle/dmg/*.dmg --clobber
 
       - name: Generate SHA-256 checksums
+        if: ${{ steps.tauri_signed.outcome == 'success' || (github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true && (steps.signing.outputs.available != 'true' || steps.tauri_signed.outcome == 'failure')) }}
         shell: bash
         run: |
           set -euo pipefail
@@ -371,6 +382,7 @@ jobs:
           echo "\nChecksums written to: $OUT"
 
       - name: Upload checksums to release
+        if: ${{ steps.tauri_signed.outcome == 'success' || (github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true && (steps.signing.outputs.available != 'true' || steps.tauri_signed.outcome == 'failure')) }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
