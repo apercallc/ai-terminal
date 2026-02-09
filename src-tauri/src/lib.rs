@@ -1,6 +1,6 @@
+mod external;
 mod keychain;
 mod logger;
-mod external;
 mod pty;
 
 use pty::PtyManager;
