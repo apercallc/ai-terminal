@@ -192,11 +192,20 @@ jobs:
           KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
           KEYCHAIN_PASSWORD="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
 
-          echo "$APPLE_CERTIFICATE" | base64 --decode > "$CERT_PATH"
+          python3 - <<'PY'
+          import base64, os, re
+          cert_path = os.environ['CERT_PATH']
+          data = os.environ['APPLE_CERTIFICATE']
+          data = re.sub(r'\s+', '', data)
+          with open(cert_path, 'wb') as f:
+            f.write(base64.b64decode(data))
+          PY
 
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          security default-keychain -s "$KEYCHAIN_PATH"
 
           security import "$CERT_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
           security list-keychains -d user -s "$KEYCHAIN_PATH"
