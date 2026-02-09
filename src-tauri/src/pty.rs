@@ -2,6 +2,7 @@ use parking_lot::Mutex;
 use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize};
 use std::collections::HashMap;
 use std::io::{Read, Write};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
 use tauri::{AppHandle, Emitter, Manager};
@@ -33,6 +34,35 @@ impl Default for PtyManager {
         Self::new()
     }
 }
+
+fn emit_pty_exit_once(app: &AppHandle, session_id: &str, exit_emitted: &Arc<AtomicBool>) {
+    if !exit_emitted.swap(true, Ordering::SeqCst) {
+        let _ = app.emit("pty-exit", session_id);
+    }
+}
+
+#[cfg(unix)]
+fn terminate_pid(pid: u32) {
+    if pid == 0 {
+        return;
+    }
+
+    // Best-effort: SIGTERM then SIGKILL shortly after.
+    let pid_i32 = pid as i32;
+    unsafe {
+        let _ = libc::kill(pid_i32, libc::SIGTERM);
+    }
+
+    thread::spawn(move || {
+        thread::sleep(std::time::Duration::from_millis(750));
+        unsafe {
+            let _ = libc::kill(pid_i32, libc::SIGKILL);
+        }
+    });
+}
+
+#[cfg(not(unix))]
+fn terminate_pid(_pid: u32) {}
 
 /// Spawn a new PTY shell session and return the session ID.
 #[tauri::command]
@@ -106,15 +136,18 @@ pub fn spawn_shell(
         .lock()
         .insert(session_id.clone(), session.clone());
 
+    let exit_emitted = Arc::new(AtomicBool::new(false));
+
     // Spawn a reader thread that forwards PTY output to the frontend
     let app_handle = app.clone();
     let sid = session_id.clone();
+    let exit_emitted_reader = exit_emitted.clone();
     thread::spawn(move || {
         let mut buf = [0u8; 4096];
         loop {
             match reader.read(&mut buf) {
                 Ok(0) => {
-                    let _ = app_handle.emit("pty-exit", &sid);
+                    emit_pty_exit_once(&app_handle, &sid, &exit_emitted_reader);
                     break;
                 }
                 Ok(n) => {
@@ -133,7 +166,7 @@ pub fn spawn_shell(
                     );
                 }
                 Err(_) => {
-                    let _ = app_handle.emit("pty-exit", &sid);
+                    emit_pty_exit_once(&app_handle, &sid, &exit_emitted_reader);
                     break;
                 }
             }
@@ -148,10 +181,15 @@ pub fn spawn_shell(
     // Wait for child exit in another thread
     let app_handle2 = app.clone();
     let sid2 = session_id.clone();
+    let exit_emitted_waiter = exit_emitted.clone();
     thread::spawn(move || {
         let mut child = child;
         let _ = child.wait();
-        let _ = app_handle2.emit("pty-exit", &sid2);
+        emit_pty_exit_once(&app_handle2, &sid2, &exit_emitted_waiter);
+
+        if let Some(manager) = app_handle2.try_state::<PtyManager>() {
+            manager.sessions.lock().remove(&sid2);
+        }
     });
 
     log::info!("Spawned PTY session: {} (PID: {})", session_id, child_id);
@@ -217,14 +255,23 @@ pub fn resize_pty(app: AppHandle, session_id: String, rows: u16, cols: u16) -> R
 #[tauri::command]
 pub fn kill_pty(app: AppHandle, session_id: String) -> Result<(), String> {
     let state = app.state::<PtyManager>();
-    let mut sessions = state.sessions.lock();
+    let (pid, removed) = {
+        let mut sessions = state.sessions.lock();
+        let pid = sessions
+            .get(&session_id)
+            .map(|s| s.lock().child_id)
+            .unwrap_or(0);
+        let removed = sessions.remove(&session_id).is_some();
+        (pid, removed)
+    };
 
-    if sessions.remove(&session_id).is_some() {
-        log::info!("Killed PTY session: {}", session_id);
-        Ok(())
-    } else {
-        Err(format!("Session {} not found", session_id))
+    if !removed {
+        return Err(format!("Session {} not found", session_id));
     }
+
+    terminate_pid(pid);
+    log::info!("Killed PTY session: {} (PID: {})", session_id, pid);
+    Ok(())
 }
 
 /// Get the current working directory of a session.
@@ -316,6 +363,12 @@ pub fn get_system_info() -> Result<serde_json::Value, String> {
 pub fn list_directory(path: String) -> Result<serde_json::Value, String> {
     use std::path::Path;
 
+    // Hide dotfiles by default unless the user explicitly typed a dot prefix.
+    // We infer this from the last path component in the *typed* string.
+    let typed = path.trim_end_matches('/');
+    let last_component = typed.rsplit('/').next().unwrap_or(typed);
+    let show_hidden = last_component.starts_with('.');
+
     let target = if path.starts_with('~') {
         let home = dirs::home_dir().ok_or_else(|| "Cannot resolve home directory".to_string())?;
         home.join(&path[1..].trim_start_matches('/'))
@@ -344,6 +397,9 @@ pub fn list_directory(path: String) -> Result<serde_json::Value, String> {
         Ok(read_dir) => {
             for entry in read_dir.flatten() {
                 let name = entry.file_name().to_string_lossy().to_string();
+                if !show_hidden && name.starts_with('.') {
+                    continue;
+                }
                 // Skip hidden files unless the user explicitly typed a dot prefix
                 let is_dir = entry.file_type().map(|t| t.is_dir()).unwrap_or(false);
                 let full_path = entry.path().to_string_lossy().to_string();
