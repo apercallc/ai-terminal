@@ -520,7 +520,10 @@ jobs:
           RELEASE_TAG="${{ needs.build_macos.outputs.release_tag }}"
           ls -la macos-bundle || true
 
-          mapfile -d '' DMG_FILES < <(find macos-bundle -maxdepth 6 -type f -name '*.dmg' -print0)
+          DMG_FILES=()
+          while IFS= read -r -d '' dmg; do
+            DMG_FILES+=("$dmg")
+          done < <(find macos-bundle -maxdepth 6 -type f -name '*.dmg' -print0)
           if (( ${#DMG_FILES[@]} == 0 )); then
             echo "ERROR: No .dmg files found in downloaded artifact." >&2
             exit 1
@@ -560,7 +563,10 @@ jobs:
           RELEASE_TAG="${{ needs.build_macos.outputs.release_tag }}"
           ls -la macos-bundle || true
 
-          mapfile -d '' DMG_FILES < <(find macos-bundle -maxdepth 6 -type f -name '*.dmg' -print0)
+          DMG_FILES=()
+          while IFS= read -r -d '' dmg; do
+            DMG_FILES+=("$dmg")
+          done < <(find macos-bundle -maxdepth 6 -type f -name '*.dmg' -print0)
           if (( ${#DMG_FILES[@]} == 0 )); then
             echo "ERROR: No .dmg files found in downloaded artifact." >&2
             exit 1
