@@ -384,13 +384,15 @@ jobs:
             echo "Using App Store Connect API key auth for notarization."
             KEY_PATH="$RUNNER_TEMP/notary-api-key.p8"
             python3 - <<'PY'
-            import base64, os, re
-            key_path = os.environ['KEY_PATH']
-            data = os.environ['APPLE_API_KEY']
-            data = re.sub(r'\s+', '', data)
-            with open(key_path, 'wb') as f:
+          import base64, os, re
+
+          key_path = os.environ["KEY_PATH"]
+          data = os.environ["APPLE_API_KEY"]
+          data = re.sub(r"\s+", "", data)
+
+          with open(key_path, "wb") as f:
               f.write(base64.b64decode(data))
-            PY
+          PY
             AUTH_ARGS+=(--key "$KEY_PATH" --key-id "$APPLE_API_KEY_ID" --issuer "$APPLE_API_ISSUER")
           else
             echo "Using Apple ID auth for notarization."
