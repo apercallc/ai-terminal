@@ -253,6 +253,9 @@ jobs:
           security list-keychains -d user -s "$KEYCHAIN_PATH"
           security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
+          echo "Available code signing identities:"
+          security find-identity -v -p codesigning || true
+
       - name: Build and sign (without notarization)
         id: tauri_signed
         if: ${{ steps.signing.outputs.available == 'true' }}
@@ -343,6 +346,12 @@ jobs:
         run: |
           set -euo pipefail
 
+          echo "Environment diagnostics:"
+          sw_vers || true
+          xcodebuild -version || true
+          xcrun notarytool --version || true
+          xcrun stapler -h >/dev/null 2>&1 && echo "stapler: ok" || true
+
           echo "Downloaded artifact contents:" 
           find macos-bundle -maxdepth 6 -print
 
@@ -356,8 +365,19 @@ jobs:
 
           echo "Notarizing: $APP_PATH"
 
+          echo "Preflight signature checks (helps distinguish signing issues from Apple service issues):"
+          codesign -dv --verbose=4 "$APP_PATH" 2>&1 || true
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH" 2>&1 || true
+          spctl -a -vv --type exec "$APP_PATH" 2>&1 || true
+
+          APP_TEAM_ID=$(codesign -dv --verbose=4 "$APP_PATH" 2>&1 | awk -F= '/^TeamIdentifier=/{print $2}' | head -1 || true)
+          if [[ -n "${APP_TEAM_ID:-}" ]]; then
+            echo "App TeamIdentifier: ${APP_TEAM_ID}"
+          fi
+
           ZIP_PATH="$RUNNER_TEMP/notarize-app.zip"
-          ditto -c -k --keepParent "$APP_PATH" "$ZIP_PATH"
+          # Recommended by Apple for app submission zips
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_PATH"
 
           AUTH_ARGS=()
           if [[ -n "${APPLE_API_KEY:-}" && -n "${APPLE_API_KEY_ID:-}" && -n "${APPLE_API_ISSUER:-}" ]]; then
@@ -378,6 +398,13 @@ jobs:
               echo "ERROR: Missing Apple ID notarization credentials and no API key provided." >&2
               exit 1
             fi
+
+            if [[ -n "${APP_TEAM_ID:-}" && "${APPLE_TEAM_ID}" != "${APP_TEAM_ID}" ]]; then
+              echo "ERROR: APPLE_TEAM_ID (${APPLE_TEAM_ID}) does not match app TeamIdentifier (${APP_TEAM_ID})." >&2
+              echo "Fix the secret to match your Developer ID Application certificate team." >&2
+              exit 1
+            fi
+
             AUTH_ARGS+=(--apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID")
           fi
 
@@ -391,19 +418,49 @@ jobs:
             echo "=== Notarization attempt ${attempt}/${ATTEMPTS} ==="
             LOG="$RUNNER_TEMP/notarize-${attempt}.log"
 
-            if xcrun notarytool submit "$ZIP_PATH" \
+            set +e
+            xcrun notarytool submit "$ZIP_PATH" \
               "${AUTH_ARGS[@]}" \
               --wait \
-                --timeout 25m 2>&1 | tee "$LOG"; then
+              --timeout 25m 2>&1 | tee "$LOG"
+            submit_exit=${PIPESTATUS[0]}
+            set -e
+
+            if [[ $submit_exit -eq 0 ]]; then
               if grep -qi 'status: Accepted' "$LOG"; then
                 echo "Notarization accepted. Stapling..."
                 xcrun stapler staple "$APP_PATH"
                 if [[ -n "${DMG_PATH:-}" ]]; then
-                  xcrun stapler staple "$DMG_PATH"
+                  echo "Attempting to staple DMG (may lag behind app ticket propagation)..."
+                  dmg_stapled=false
+                  for s in 1 2 3; do
+                    if xcrun stapler staple "$DMG_PATH"; then
+                      dmg_stapled=true
+                      break
+                    fi
+                    echo "DMG staple attempt ${s}/3 failed; retrying in 30s..." >&2
+                    sleep 30
+                  done
+
+                  if [[ "$dmg_stapled" != "true" ]]; then
+                    echo "WARNING: DMG stapling failed after retries; continuing (app is stapled)." >&2
+                  fi
                 fi
                 echo "Done."
                 exit 0
               fi
+            fi
+
+            echo "Notarytool exit code: $submit_exit"
+            echo "Notarytool output (last 120 lines):"
+            tail -120 "$LOG" || true
+
+            # If the output includes a submission id, surface it for follow-up debugging.
+            SUBMISSION_ID=$(grep -Eo '(id:|id =)[[:space:]]*[0-9A-Fa-f-]+' "$LOG" | head -1 | sed -E 's/^(id:|id =)[[:space:]]*//' || true)
+            if [[ -n "${SUBMISSION_ID:-}" ]]; then
+              echo "Submission id detected: $SUBMISSION_ID"
+              xcrun notarytool info "$SUBMISSION_ID" "${AUTH_ARGS[@]}" 2>&1 || true
+              xcrun notarytool log "$SUBMISSION_ID" "${AUTH_ARGS[@]}" 2>&1 | tail -200 || true
             fi
 
             if grep -qEi "$retryable_regex" "$LOG"; then

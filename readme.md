@@ -65,6 +65,17 @@ npm run tauri dev
 ### Build (Tauri)
 
 ```bash
+### Local notarization (macOS)
+
+To troubleshoot notarization locally (same approach as CI), build a signed `.app` and then run:
+
+- `./scripts/notarize-local.sh "/path/to/AI Terminal.app"`
+
+This script reads notarization credentials from environment variables (Apple ID or App Store Connect API key). It does not print secrets.
+
+If you want to mirror CI signing locally (temporary keychain + base64 `.p12`), you can use:
+
+- `./scripts/build-signed-local.sh`
 npm run tauri build
 ```
 
