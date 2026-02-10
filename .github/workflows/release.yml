@@ -126,9 +126,20 @@ jobs:
           [[ -n "${{ secrets.APPLE_CERTIFICATE }}" ]] || missing+=(APPLE_CERTIFICATE)
           [[ -n "${{ secrets.APPLE_CERTIFICATE_PASSWORD }}" ]] || missing+=(APPLE_CERTIFICATE_PASSWORD)
           [[ -n "${{ secrets.APPLE_SIGNING_IDENTITY }}" ]] || missing+=(APPLE_SIGNING_IDENTITY)
-          [[ -n "${{ secrets.APPLE_TEAM_ID }}" ]] || missing+=(APPLE_TEAM_ID)
-          [[ -n "${{ secrets.APPLE_ID }}" ]] || missing+=(APPLE_ID)
-          [[ -n "${{ secrets.APPLE_PASSWORD }}" ]] || missing+=(APPLE_PASSWORD)
+
+          has_apple_id_auth=true
+          [[ -n "${{ secrets.APPLE_TEAM_ID }}" ]] || has_apple_id_auth=false
+          [[ -n "${{ secrets.APPLE_ID }}" ]] || has_apple_id_auth=false
+          [[ -n "${{ secrets.APPLE_PASSWORD }}" ]] || has_apple_id_auth=false
+
+          has_api_key_auth=true
+          [[ -n "${{ secrets.APPLE_API_KEY }}" ]] || has_api_key_auth=false
+          [[ -n "${{ secrets.APPLE_API_KEY_ID }}" ]] || has_api_key_auth=false
+          [[ -n "${{ secrets.APPLE_API_ISSUER }}" ]] || has_api_key_auth=false
+
+          if [[ "$has_apple_id_auth" != "true" && "$has_api_key_auth" != "true" ]]; then
+            missing+=(NOTARIZATION_CREDENTIALS)
+          fi
 
           if (( ${#missing[@]} > 0 )); then
             echo "ERROR: Missing required signing/notarization secrets for a production tag release:" >&2
@@ -147,9 +158,28 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
         run: |
           set -euo pipefail
-          if [[ -n "$APPLE_CERTIFICATE" && -n "$APPLE_CERTIFICATE_PASSWORD" && -n "$APPLE_SIGNING_IDENTITY" && -n "$APPLE_TEAM_ID" && -n "$APPLE_ID" && -n "$APPLE_PASSWORD" ]]; then
+
+          has_signing=true
+          [[ -n "${APPLE_CERTIFICATE:-}" ]] || has_signing=false
+          [[ -n "${APPLE_CERTIFICATE_PASSWORD:-}" ]] || has_signing=false
+          [[ -n "${APPLE_SIGNING_IDENTITY:-}" ]] || has_signing=false
+
+          has_apple_id_auth=true
+          [[ -n "${APPLE_TEAM_ID:-}" ]] || has_apple_id_auth=false
+          [[ -n "${APPLE_ID:-}" ]] || has_apple_id_auth=false
+          [[ -n "${APPLE_PASSWORD:-}" ]] || has_apple_id_auth=false
+
+          has_api_key_auth=true
+          [[ -n "${APPLE_API_KEY:-}" ]] || has_api_key_auth=false
+          [[ -n "${APPLE_API_KEY_ID:-}" ]] || has_api_key_auth=false
+          [[ -n "${APPLE_API_ISSUER:-}" ]] || has_api_key_auth=false
+
+          if [[ "$has_signing" == "true" && ( "$has_apple_id_auth" == "true" || "$has_api_key_auth" == "true" ) ]]; then
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
@@ -306,6 +336,9 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           NOTARIZE_ATTEMPTS: ${{ github.event_name == 'push' && 12 || 8 }}
         run: |
           set -euo pipefail
@@ -326,6 +359,28 @@ jobs:
           ZIP_PATH="$RUNNER_TEMP/notarize-app.zip"
           ditto -c -k --keepParent "$APP_PATH" "$ZIP_PATH"
 
+          AUTH_ARGS=()
+          if [[ -n "${APPLE_API_KEY:-}" && -n "${APPLE_API_KEY_ID:-}" && -n "${APPLE_API_ISSUER:-}" ]]; then
+            echo "Using App Store Connect API key auth for notarization."
+            KEY_PATH="$RUNNER_TEMP/notary-api-key.p8"
+            python3 - <<'PY'
+            import base64, os, re
+            key_path = os.environ['KEY_PATH']
+            data = os.environ['APPLE_API_KEY']
+            data = re.sub(r'\s+', '', data)
+            with open(key_path, 'wb') as f:
+              f.write(base64.b64decode(data))
+            PY
+            AUTH_ARGS+=(--key "$KEY_PATH" --key-id "$APPLE_API_KEY_ID" --issuer "$APPLE_API_ISSUER")
+          else
+            echo "Using Apple ID auth for notarization."
+            if [[ -z "${APPLE_ID:-}" || -z "${APPLE_PASSWORD:-}" || -z "${APPLE_TEAM_ID:-}" ]]; then
+              echo "ERROR: Missing Apple ID notarization credentials and no API key provided." >&2
+              exit 1
+            fi
+            AUTH_ARGS+=(--apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID")
+          fi
+
           ATTEMPTS="${NOTARIZE_ATTEMPTS:-8}"
           SLEEP_SECONDS=30
           MAX_SLEEP=600
@@ -337,10 +392,8 @@ jobs:
             LOG="$RUNNER_TEMP/notarize-${attempt}.log"
 
             if xcrun notarytool submit "$ZIP_PATH" \
-                --apple-id "$APPLE_ID" \
-                --password "$APPLE_PASSWORD" \
-                --team-id "$APPLE_TEAM_ID" \
-                --wait \
+              "${AUTH_ARGS[@]}" \
+              --wait \
                 --timeout 25m 2>&1 | tee "$LOG"; then
               if grep -qi 'status: Accepted' "$LOG"; then
                 echo "Notarization accepted. Stapling..."
