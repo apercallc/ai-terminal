@@ -343,6 +343,7 @@ jobs:
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           NOTARIZE_ATTEMPTS: ${{ github.event_name == 'push' && 12 || 8 }}
+          STRICT_DMG_STAPLE: ${{ github.event_name == 'push' && 'true' || 'false' }}
         run: |
           set -euo pipefail
 
@@ -489,18 +490,26 @@ jobs:
             notarize_with_retry "$DMG_PATH" "dmg"
 
             echo "Stapling DMG (may still lag behind ticket propagation)..."
+            DMG_STAPLE_ATTEMPTS=3
+            if [[ "${STRICT_DMG_STAPLE:-false}" == "true" ]]; then
+              DMG_STAPLE_ATTEMPTS=6
+            fi
             dmg_stapled=false
-            for s in 1 2 3; do
+            for s in $(seq 1 "$DMG_STAPLE_ATTEMPTS"); do
               if xcrun stapler staple "$DMG_PATH"; then
                 dmg_stapled=true
                 break
               fi
-              echo "DMG staple attempt ${s}/3 failed; retrying in 30s..." >&2
+              echo "DMG staple attempt ${s}/${DMG_STAPLE_ATTEMPTS} failed; retrying in 30s..." >&2
               sleep 30
             done
 
             if [[ "$dmg_stapled" != "true" ]]; then
-              echo "WARNING: DMG stapling failed after retries; continuing (app is stapled, DMG was submitted)." >&2
+              if [[ "${STRICT_DMG_STAPLE:-false}" == "true" ]]; then
+                echo "ERROR: DMG stapling failed after retries (strict mode)." >&2
+                exit 1
+              fi
+              echo "WARNING: DMG stapling failed after retries; continuing (non-strict mode)." >&2
             fi
           fi
 
