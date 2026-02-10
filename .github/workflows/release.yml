@@ -310,8 +310,11 @@ jobs:
         run: |
           set -euo pipefail
 
-          APP_PATH=$(ls -d macos-bundle/*.app | head -1)
-          DMG_PATH=$(ls macos-bundle/*.dmg 2>/dev/null | head -1 || true)
+          echo "Downloaded artifact contents:" 
+          find macos-bundle -maxdepth 6 -print
+
+          APP_PATH=$(find macos-bundle -maxdepth 6 -type d -name '*.app' -print | head -1)
+          DMG_PATH=$(find macos-bundle -maxdepth 6 -type f -name '*.dmg' -print | head -1 || true)
 
           if [[ -z "${APP_PATH:-}" ]]; then
             echo "ERROR: Could not find .app bundle in downloaded artifact." >&2
@@ -404,7 +407,13 @@ jobs:
           set -euo pipefail
           RELEASE_TAG="${{ needs.build_macos.outputs.release_tag }}"
           ls -la macos-bundle || true
-          gh release upload "${RELEASE_TAG}" macos-bundle/*.dmg --clobber
+
+          mapfile -d '' DMG_FILES < <(find macos-bundle -maxdepth 6 -type f -name '*.dmg' -print0)
+          if (( ${#DMG_FILES[@]} == 0 )); then
+            echo "ERROR: No .dmg files found in downloaded artifact." >&2
+            exit 1
+          fi
+          gh release upload "${RELEASE_TAG}" "${DMG_FILES[@]}" --clobber
 
       - name: Create or update GitHub release (not notarized - allowed)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true && (needs.build_macos.outputs.build_unsigned_ok == 'true' || (needs.build_macos.outputs.signing_available == 'true' && needs.build_macos.outputs.build_signed_ok == 'true')) && steps.notarize.outcome != 'success' }}
@@ -438,7 +447,13 @@ jobs:
           set -euo pipefail
           RELEASE_TAG="${{ needs.build_macos.outputs.release_tag }}"
           ls -la macos-bundle || true
-          gh release upload "${RELEASE_TAG}" macos-bundle/*.dmg --clobber
+
+          mapfile -d '' DMG_FILES < <(find macos-bundle -maxdepth 6 -type f -name '*.dmg' -print0)
+          if (( ${#DMG_FILES[@]} == 0 )); then
+            echo "ERROR: No .dmg files found in downloaded artifact." >&2
+            exit 1
+          fi
+          gh release upload "${RELEASE_TAG}" "${DMG_FILES[@]}" --clobber
 
       - name: Generate SHA-256 checksums
         if: ${{ steps.notarize.outcome == 'success' || (github.event_name == 'workflow_dispatch' && inputs.allow_unsigned == true && steps.notarize.outcome != 'success') }}
@@ -448,12 +463,17 @@ jobs:
           OUT="$GITHUB_WORKSPACE/checksums-sha256.txt"
           : > "$OUT"
 
-          if ls macos-bundle/*.dmg >/dev/null 2>&1; then
-            shasum -a 256 macos-bundle/*.dmg >> "$OUT"
+          # DMGs
+          if find macos-bundle -maxdepth 6 -type f -name '*.dmg' -print -quit | grep -q .; then
+            find macos-bundle -maxdepth 6 -type f -name '*.dmg' -print0 | sort -z | xargs -0 shasum -a 256 >> "$OUT"
           fi
 
-          if ls macos-bundle/*.app >/dev/null 2>&1; then
-            find macos-bundle/*.app -type f -print0 | sort -z | xargs -0 shasum -a 256 >> "$OUT"
+          # App bundles: hash file contents deterministically
+          if find macos-bundle -maxdepth 6 -type d -name '*.app' -print -quit | grep -q .; then
+            find macos-bundle -maxdepth 6 -type d -name '*.app' -print0 \
+              | xargs -0 -I{} sh -c 'find "$1" -type f -print0' _ {} \
+              | sort -z \
+              | xargs -0 shasum -a 256 >> "$OUT"
           fi
 
           echo "\nChecksums written to: $OUT"
