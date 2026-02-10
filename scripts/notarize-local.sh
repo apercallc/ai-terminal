@@ -82,7 +82,7 @@ fi
 echo "Zipping app (ditto):"
 ditto -c -k --sequesterRsrc --keepParent "${APP_PATH}" "${ZIP_PATH}"
 
-echo "Submitting to Apple notary service (this may take a while):"
+echo "Submitting app ZIP to Apple notary service (this may take a while):"
 ATTEMPTS="${NOTARIZE_ATTEMPTS:-8}"
 SLEEP_SECONDS=30
 MAX_SLEEP=600
@@ -90,7 +90,7 @@ MAX_SLEEP=600
 retryable_regex='(statusCode: Optional\(5[0-9]{2}\)|\b5[0-9]{2}\b|UNEXPECTED_ERROR|server exception|Internal Server Error|Service Unavailable|Gateway Timeout|timed out|Could not connect|network|temporarily unavailable|try again at a later time)'
 
 for attempt in $(seq 1 "$ATTEMPTS"); do
-  echo "=== Notarization attempt ${attempt}/${ATTEMPTS} ==="
+  echo "=== Notarization (app) attempt ${attempt}/${ATTEMPTS} ==="
   ATTEMPT_LOG="${TMP_DIR}/notarytool-${attempt}.log"
 
   set +e
@@ -107,19 +107,32 @@ for attempt in $(seq 1 "$ATTEMPTS"); do
     echo "Notarization accepted. Stapling..."
     xcrun stapler staple "${APP_PATH}"
     if [[ -n "${DMG_PATH}" ]]; then
-      echo "Attempting to staple DMG (may lag behind app ticket propagation)..."
-      dmg_stapled=false
-      for s in 1 2 3; do
-        if xcrun stapler staple "${DMG_PATH}"; then
-          dmg_stapled=true
-          break
-        fi
-        echo "DMG staple attempt ${s}/3 failed; retrying in 30s..." >&2
-        sleep 30
-      done
+      echo "Submitting DMG to Apple notary service (required to staple DMG):"
 
-      if [[ "$dmg_stapled" != "true" ]]; then
-        echo "WARNING: DMG stapling failed after retries; continuing (app is stapled)." >&2
+      set +e
+      xcrun notarytool submit "${DMG_PATH}" "${AUTH_ARGS[@]}" --wait --timeout 25m 2>&1 | tee "${TMP_DIR}/notarytool-dmg.log"
+      dmg_submit_exit=${PIPESTATUS[0]}
+      set -e
+
+      if [[ $dmg_submit_exit -eq 0 ]] && grep -qi 'status: Accepted' "${TMP_DIR}/notarytool-dmg.log"; then
+        echo "DMG notarization accepted. Stapling DMG (may still lag behind ticket propagation)..."
+        dmg_stapled=false
+        for s in 1 2 3; do
+          if xcrun stapler staple "${DMG_PATH}"; then
+            dmg_stapled=true
+            break
+          fi
+          echo "DMG staple attempt ${s}/3 failed; retrying in 30s..." >&2
+          sleep 30
+        done
+
+        if [[ "$dmg_stapled" != "true" ]]; then
+          echo "WARNING: DMG stapling failed after retries; continuing (app is stapled, DMG was submitted)." >&2
+        fi
+      else
+        echo "WARNING: DMG notarization did not return Accepted; skipping DMG stapling." >&2
+        echo "Notarytool exit code: ${dmg_submit_exit}" >&2
+        tail -120 "${TMP_DIR}/notarytool-dmg.log" >&2 || true
       fi
     fi
     echo "Staple complete."

@@ -375,10 +375,6 @@ jobs:
             echo "App TeamIdentifier: ${APP_TEAM_ID}"
           fi
 
-          ZIP_PATH="$RUNNER_TEMP/notarize-app.zip"
-          # Recommended by Apple for app submission zips
-          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_PATH"
-
           AUTH_ARGS=()
           if [[ -n "${APPLE_API_KEY:-}" && -n "${APPLE_API_KEY_ID:-}" && -n "${APPLE_API_ISSUER:-}" ]]; then
             echo "Using App Store Connect API key auth for notarization."
@@ -416,78 +412,99 @@ jobs:
 
           retryable_regex='(statusCode: Optional\(5[0-9]{2}\)|\b5[0-9]{2}\b|UNEXPECTED_ERROR|server exception|Internal Server Error|Service Unavailable|Gateway Timeout|timed out|Could not connect|network|temporarily unavailable|try again at a later time)'
 
-          for attempt in $(seq 1 "$ATTEMPTS"); do
-            echo "=== Notarization attempt ${attempt}/${ATTEMPTS} ==="
-            LOG="$RUNNER_TEMP/notarize-${attempt}.log"
 
-            set +e
-            xcrun notarytool submit "$ZIP_PATH" \
-              "${AUTH_ARGS[@]}" \
-              --wait \
-              --timeout 25m 2>&1 | tee "$LOG"
-            submit_exit=${PIPESTATUS[0]}
-            set -e
+          notarize_with_retry() {
+            local upload_path="$1"
+            local label="$2"
 
-            if [[ $submit_exit -eq 0 ]]; then
-              if grep -qi 'status: Accepted' "$LOG"; then
-                echo "Notarization accepted. Stapling..."
-                xcrun stapler staple "$APP_PATH"
-                if [[ -n "${DMG_PATH:-}" ]]; then
-                  echo "Attempting to staple DMG (may lag behind app ticket propagation)..."
-                  dmg_stapled=false
-                  for s in 1 2 3; do
-                    if xcrun stapler staple "$DMG_PATH"; then
-                      dmg_stapled=true
-                      break
-                    fi
-                    echo "DMG staple attempt ${s}/3 failed; retrying in 30s..." >&2
-                    sleep 30
-                  done
+            local local_sleep_seconds="$SLEEP_SECONDS"
 
-                  if [[ "$dmg_stapled" != "true" ]]; then
-                    echo "WARNING: DMG stapling failed after retries; continuing (app is stapled)." >&2
+            for attempt in $(seq 1 "$ATTEMPTS"); do
+              echo "=== Notarization (${label}) attempt ${attempt}/${ATTEMPTS} ==="
+              local log="$RUNNER_TEMP/notarize-${label//[^A-Za-z0-9_.-]/_}-${attempt}.log"
+
+              set +e
+              xcrun notarytool submit "$upload_path" \
+                "${AUTH_ARGS[@]}" \
+                --wait \
+                --timeout 25m 2>&1 | tee "$log"
+              local submit_exit=${PIPESTATUS[0]}
+              set -e
+
+              if [[ $submit_exit -eq 0 ]] && grep -qi 'status: Accepted' "$log"; then
+                echo "Notarization accepted: ${label}"
+                return 0
+              fi
+
+              echo "Notarytool exit code: $submit_exit"
+              echo "Notarytool output (last 120 lines):"
+              tail -120 "$log" || true
+
+              local submission_id
+              submission_id=$(grep -Eo '(id:|id =)[[:space:]]*[0-9A-Fa-f-]+' "$log" | head -1 | sed -E 's/^(id:|id =)[[:space:]]*//' || true)
+              if [[ -n "${submission_id:-}" ]]; then
+                echo "Submission id detected: $submission_id"
+                xcrun notarytool info "$submission_id" "${AUTH_ARGS[@]}" 2>&1 || true
+                xcrun notarytool log "$submission_id" "${AUTH_ARGS[@]}" 2>&1 | tail -200 || true
+              fi
+
+              if grep -qEi "$retryable_regex" "$log"; then
+                echo "Transient Apple error detected."
+                if [[ "$attempt" -lt "$ATTEMPTS" ]]; then
+                  jitter=$((RANDOM % 15))
+                  sleep_for=$((local_sleep_seconds + jitter))
+                  echo "Retrying in ${sleep_for}s..."
+                  sleep "$sleep_for"
+                  local_sleep_seconds=$((local_sleep_seconds * 2))
+                  if (( local_sleep_seconds > MAX_SLEEP )); then
+                    local_sleep_seconds=$MAX_SLEEP
                   fi
+                  continue
                 fi
-                echo "Done."
-                exit 0
+                echo "Retries exhausted." >&2
+                return 1
               fi
-            fi
 
-            echo "Notarytool exit code: $submit_exit"
-            echo "Notarytool output (last 120 lines):"
-            tail -120 "$LOG" || true
+              echo "Notarization failed with a non-retryable error." >&2
+              return 1
+            done
 
-            # If the output includes a submission id, surface it for follow-up debugging.
-            SUBMISSION_ID=$(grep -Eo '(id:|id =)[[:space:]]*[0-9A-Fa-f-]+' "$LOG" | head -1 | sed -E 's/^(id:|id =)[[:space:]]*//' || true)
-            if [[ -n "${SUBMISSION_ID:-}" ]]; then
-              echo "Submission id detected: $SUBMISSION_ID"
-              xcrun notarytool info "$SUBMISSION_ID" "${AUTH_ARGS[@]}" 2>&1 || true
-              xcrun notarytool log "$SUBMISSION_ID" "${AUTH_ARGS[@]}" 2>&1 | tail -200 || true
-            fi
+            echo "Retries exhausted." >&2
+            return 1
+          }
 
-            if grep -qEi "$retryable_regex" "$LOG"; then
-              echo "Transient Apple error detected."
-              if [[ "$attempt" -lt "$ATTEMPTS" ]]; then
-                jitter=$((RANDOM % 15))
-                sleep_for=$((SLEEP_SECONDS + jitter))
-                echo "Retrying in ${sleep_for}s..."
-                sleep "$sleep_for"
-                SLEEP_SECONDS=$((SLEEP_SECONDS * 2))
-                if (( SLEEP_SECONDS > MAX_SLEEP )); then
-                  SLEEP_SECONDS=$MAX_SLEEP
-                fi
-                continue
+          echo "Preparing app ZIP for notarization (ditto)..."
+          ZIP_PATH="$RUNNER_TEMP/notarize-app.zip"
+          # Recommended by Apple for app submission zips
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_PATH"
+
+          echo "Submitting app ZIP to Apple notary service..."
+          notarize_with_retry "$ZIP_PATH" "app"
+
+          echo "Stapling app..."
+          xcrun stapler staple "$APP_PATH"
+
+          if [[ -n "${DMG_PATH:-}" ]]; then
+            echo "Submitting DMG to Apple notary service (required to staple DMG)..."
+            notarize_with_retry "$DMG_PATH" "dmg"
+
+            echo "Stapling DMG (may still lag behind ticket propagation)..."
+            dmg_stapled=false
+            for s in 1 2 3; do
+              if xcrun stapler staple "$DMG_PATH"; then
+                dmg_stapled=true
+                break
               fi
-              echo "Retries exhausted." >&2
-              exit 1
+              echo "DMG staple attempt ${s}/3 failed; retrying in 30s..." >&2
+              sleep 30
+            done
+
+            if [[ "$dmg_stapled" != "true" ]]; then
+              echo "WARNING: DMG stapling failed after retries; continuing (app is stapled, DMG was submitted)." >&2
             fi
+          fi
 
-            echo "Notarization failed with a non-retryable error." >&2
-            exit 1
-          done
-
-          echo "Retries exhausted." >&2
-          exit 1
+          echo "Done."
 
       - name: Create or update GitHub release (notarized)
         if: ${{ steps.notarize.outcome == 'success' }}
